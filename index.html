@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
-  <title>24/7 WITH 떠숭이 — Banana Time</title>
-  <meta name="description" content="원숭이 인형과 24/7 함께! 랜덤 드리프트 낙하 + 페어 스폰 + 시간 바나나." />
+  <title>Banana Time</title>
+  <meta name="description" content="24/7 With... DDEOSUNGEE!" />
   <style>
     *,*::before,*::after{box-sizing:border-box}
     :root{--bg:#fff9e9;--ink:#1f1f1f;--brand:#ffbd2e;--ui:#242424}
@@ -49,7 +49,7 @@
 <body>
   <div class="wrap">
     <header>
-      <h1>24/7 WITH 떠숭이 <span class="badge">Banana Time</span></h1>
+      <h1>24/7 With.. DDEOSUNGEE <span class="badge">Banana Time</span></h1>
       <a class="cta" id="shopLink" href="#" target="_blank" rel="noopener"><span class="pill">NEW</span> 인형 보러가기</a>
     </header>
 
@@ -67,16 +67,15 @@
 
       <div class="center group">
         <button class="btn" id="startBtn">떠숭이 밥주기</button>
-        <button class="btn hidden" id="shareBtn">공유하기</button>
-        <a class="btn hidden" id="buyBtn" href="#" target="_blank" rel="noopener" aria-label="떠숭이 인형 구매하기">떠숭이 인형 구매하기</a>
+        <button class="btn hidden" id="shareBtn">결과 공유하기</button>
       </div>
 
       <div class="center" style="font-size:12px;opacity:.85">
-        골든 (+5) / 썩은(❤️-1) / <b>시간 바나나(⏱ +2s)</b> · 가끔은 골든·썩은이 <b>딱 붙어서</b> 내려와요
+        Golden (+5) / Rotten (❤️-1) / Time(⏱ +2s)
       </div>
     </div>
 
-    <div class="footer">모바일 최적화 · 스크롤 없음 · 가로/세로 자동 맞춤</div>
+    <div class="footer">Made by Twitter(@ddeosungee)</div>
   </div>
 
   <script>
@@ -121,27 +120,21 @@
   const ui={
     score:document.getElementById('score'), time:document.getElementById('time'), best:document.getElementById('best'),
     lives:document.getElementById('lives'), startBtn:document.getElementById('startBtn'),
-    shareBtn:document.getElementById('shareBtn'), buyBtn:document.getElementById('buyBtn'), shopLink:document.getElementById('shopLink')
+    shareBtn:document.getElementById('shareBtn'), shopLink:document.getElementById('shopLink')
   };
-  ui.shopLink.href=CONFIG.SHOP_URL; ui.buyBtn.href=CONFIG.SHOP_URL;
+  ui.shopLink.href=CONFIG.SHOP_URL;
 
   // ========= RESPONSIVE CANVAS (full stretch) =========
   function fitCanvas(){
-    // 캔버스를 슬롯 영역에 완전히 맞춤 (비율 무시하고 꽉 채움)
     const W = slot.clientWidth;
     const H = slot.clientHeight;
-    
-    // 실제 렌더링 해상도도 화면에 맞게 조정
     canvas.width = W;
     canvas.height = H;
-    
-    // CSS로도 100% 채우기
     canvas.style.width = '100%';
     canvas.style.height = '100%';
   }
   addEventListener('resize', fitCanvas);
   addEventListener('orientationchange', fitCanvas);
-  // iOS 주소창 변화 감지
   if (window.visualViewport) { visualViewport.addEventListener('resize', fitCanvas); }
 
   // ========= STATE =========
@@ -170,12 +163,9 @@
     if(state.rafId){ cancelAnimationFrame(state.rafId); state.rafId = null; }
     state.running=true; state.frame=0; state.score=0; state.timeLeft=CONFIG.GAME_SECONDS; state.lives=3; state.shake=0; state.monkeyFlash=0; state.bananas=[]; state.spawnEvery=CONFIG.BASE_SPAWN;
     state.timeAcc = 0;
-    
-    // 원숭이 위치를 화면 중앙 하단으로 조정
     state.monkey.x = canvas.width/2;
     state.monkey.y = canvas.height - 80;
-    
-    ui.score.textContent='0'; ui.time.textContent=CONFIG.GAME_SECONDS; ui.lives.textContent='3'; ui.startBtn.textContent='다시 시작'; ui.shareBtn.classList.add('hidden'); ui.buyBtn.classList.add('hidden');
+    ui.score.textContent='0'; ui.time.textContent=CONFIG.GAME_SECONDS; ui.lives.textContent='3'; ui.startBtn.textContent='다시 시작'; ui.shareBtn.classList.add('hidden');
     resetTimeBananaTimer();
     canvas.onclick = null;
     state.lastTick = performance.now();
@@ -275,7 +265,6 @@
     if(state.monkeyFlash>0){ ctx.globalAlpha = 0.35; ctx.fillStyle = '#ff3b30'; roundedRect(state.monkey.x-state.monkey.w/2, state.monkey.y-state.monkey.h/2, state.monkey.w, state.monkey.h, 16, true); ctx.globalAlpha = 1.0; }
     if(state.bubble.frames>0){ drawBubble(state.monkey.x, state.monkey.y-70, state.bubble.text); }
 
-    // floating texts
     for(let i=state.floaters.length-1;i>=0;i--){
       const f=state.floaters[i]; ctx.save();
       const alpha=Math.max(0, f.frames/30); ctx.globalAlpha = alpha;
@@ -304,7 +293,7 @@
     } else {
       ui.best.textContent = best;
     }
-    ui.shareBtn.classList.remove('hidden'); ui.buyBtn.classList.remove('hidden');
+    ui.shareBtn.classList.remove('hidden');
   }
 
   // ========= DRAW HELPERS =========
@@ -314,9 +303,6 @@
     g.addColorStop(1,'#fff1b0'); 
     ctx.fillStyle=g; 
     ctx.fillRect(0,0,canvas.width,canvas.height); 
-    // 배경 원들 제거 - 이 부분을 주석처리
-    // ctx.fillStyle='rgba(255,255,255,.7)'; 
-    // for(let i=0;i<6;i++) bubbleDot(rand(0,canvas.width),rand(40,200),rand(40,110))
   }
   function bubbleDot(x,y,r){ ctx.beginPath(); ctx.ellipse(x,y,r,r*.6,0,0,Math.PI*2); ctx.fill() }
   function drawTitleRibbon(text){ ctx.save(); ctx.translate(canvas.width/2, 70); ctx.fillStyle = 'rgba(0,0,0,.08)'; roundedRect(-150,-22,300,44,12,true); ctx.fillStyle = '#111'; ctx.font='900 18px system-ui, Apple SD Gothic Neo, Noto Sans KR'; ctx.textAlign='center'; ctx.fillText(text,0,6); ctx.restore() }
@@ -327,7 +313,7 @@
   function addFloater(x,y,text,frames){ state.floaters.push({x,y,text,frames:frames||28}); }
 
   // ========= SHARE =========
-  function share(){ const text=`떠숭이와 점수 ${state.score}!`; const url=CONFIG.SHOP_URL; if(navigator.share){ navigator.share({title:'24/7 WITH 떠숭이',text,url}).catch(()=>{}) } else { navigator.clipboard.writeText(`${text} — ${url}`); alert('공유 링크를 복사했어요!') } }
+  function share(){ const text=`떠숭이와 점수 ${state.score}!`; const url=CONFIG.SHOP_URL; if(navigator.share){ navigator.share({title:'24/7 With 떠숭이',text,url}).catch(()=>{}) } else { navigator.clipboard.writeText(`${text} — ${url}`); alert('공유 링크를 복사했어요!') } }
 
   // ========= BOOT =========
   async function boot(){
@@ -337,9 +323,8 @@
       loadImage('heart.png'), loadImage('logo.png')
     ]);
     state.assets={monkey,banana,gold,rotten,time,heart,logo};
-    fitCanvas(); // 최초 맞춤
+    fitCanvas();
     draw();
-    // 첫 안내
     ctx.save(); ctx.globalAlpha=.9; ctx.fillStyle='rgba(0,0,0,.35)'; ctx.fillRect(0,0,canvas.width,canvas.height); ctx.restore();
     ctx.fillStyle='#fff'; ctx.textAlign='center';
     ctx.font='800 18px system-ui, Apple SD Gothic Neo, Noto Sans KR'; ctx.fillText('탭/드래그 또는 ← → 로 이동',canvas.width/2,canvas.height/2-6);
