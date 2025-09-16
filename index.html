@@ -16,18 +16,12 @@
     }
     .wrap{
       height:100dvh; width:100vw;
-      display:grid; grid-template-rows:auto 1fr auto; gap:8px;
+      display:grid; grid-template-rows:1fr auto auto; gap:8px;
       padding: max(8px, env(safe-area-inset-top))
                max(8px, env(safe-area-inset-right))
                max(8px, env(safe-area-inset-bottom))
                max(8px, env(safe-area-inset-left));
     }
-    header{display:flex;align-items:center;justify-content:space-between;gap:8px}
-    h1{font-size:clamp(16px,4vw,20px);margin:0;letter-spacing:.2px}
-    .badge{display:inline-flex;align-items:center;gap:6px;background:#111;color:#fff;border-radius:999px;padding:3px 8px;font-size:12px}
-    .cta{display:inline-flex;align-items:center;gap:8px;background:var(--ui);color:#fff;border-radius:999px;padding:6px 12px;text-decoration:none;font-weight:700}
-    .cta .pill{background:var(--brand);color:#151515;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:800}
-
     .panel{
       background:#fff;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.08);
       padding:8px; display:grid; grid-template-rows:auto 1fr auto auto; gap:6px; height:100%;
@@ -37,30 +31,22 @@
     .center{text-align:center}
     .slot{min-height:0; display:grid; place-items:stretch; overflow:hidden}
     canvas{image-rendering:pixelated; background:linear-gradient(0deg,#fff7d1,#fff1b0); border-radius:12px; display:block; width:100%; height:100%;}
-
     .group{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
     button.btn, a.btn{appearance:none;border:none;background:var(--brand);color:#1b1b1b;font-weight:800;padding:9px 12px;border-radius:12px;cursor:pointer;box-shadow:0 6px 16px rgba(0,0,0,.15);text-decoration:none;display:inline-block}
     button.btn:active{transform:translateY(1px)}
     .hidden{display:none!important}
-
     .footer{font-size:11px;opacity:.7;text-align:center}
   </style>
 </head>
 <body>
   <div class="wrap">
-    <header>
-      <h1>24/7 With.. DDEOSUNGEE <span class="badge">Banana Time</span></h1>
-      <a class="cta" id="shopLink" href="#" target="_blank" rel="noopener"><span class="pill">NEW</span> 인형 보러가기</a>
-    </header>
-
     <div class="panel">
       <div class="hud">
         <div class="left">점수: <span id="score">0</span></div>
-        <div class="center">남은시간: <span id="time">21</span>s</div>
+        <div class="center">남은시간: <span id="time">30</span>s</div>
         <div class="right" style="text-align:right">❤️ <span id="lives">3</span> · 최고: <span id="best">0</span></div>
       </div>
 
-      <!-- 캔버스가 이 칸(1fr)에 맞춰 자동 리사이즈 -->
       <div class="slot" id="slot">
         <canvas id="game" width="360" height="640" aria-label="WITH Monkey Game"></canvas>
       </div>
@@ -74,20 +60,19 @@
         Golden (+5) / Rotten (❤️-1) / Time(⏱ +2s)
       </div>
     </div>
-
     <div class="footer">Made by Twitter(@ddeosungee)</div>
   </div>
 
   <script>
   // ========= CONFIG =========
   const CONFIG = {
-    GAME_SECONDS: 21,
+    GAME_SECONDS: 30,
     MONKEY_SPEED: 6,
     BASE_SPAWN: 34,
     FALL_MIN: 2,
     FALL_MAX: 5,
     GOLDEN_CHANCE: 0.08,
-    ROTTEN_CHANCE: 0.35,
+    ROTTEN_CHANCE: 0.20,   // 조금 줄임
     SHAKE_FRAMES: 18,
     MONKEY_FLASH: 14,
     DRIFT_VX_MAX: 1.6,
@@ -99,10 +84,10 @@
     PAIR_CHANCE: 0.28,
     PAIR_SPACING: 42,
     PAIR_VX_PUSH: 0.35,
-    TIMEBANANA_PERIOD_S: 7,
+    TIMEBANANA_PERIOD_S: 4, // 더 자주 나오게
     TIMEBANANA_JITTER_S: 2,
     TIMEBANANA_ADD_S: 2,
-    SHOP_URL: "https://example.com/plush",
+    SHOP_URL: "#",
     TITLE_TEXT: "Banana Time"
   };
 
@@ -120,11 +105,9 @@
   const ui={
     score:document.getElementById('score'), time:document.getElementById('time'), best:document.getElementById('best'),
     lives:document.getElementById('lives'), startBtn:document.getElementById('startBtn'),
-    shareBtn:document.getElementById('shareBtn'), shopLink:document.getElementById('shopLink')
+    shareBtn:document.getElementById('shareBtn')
   };
-  ui.shopLink.href=CONFIG.SHOP_URL;
 
-  // ========= RESPONSIVE CANVAS (full stretch) =========
   function fitCanvas(){
     const W = slot.clientWidth;
     const H = slot.clientHeight;
@@ -151,9 +134,17 @@
 
   // ========= INPUT =========
   const keys=new Set(); addEventListener('keydown',e=>keys.add(e.key)); addEventListener('keyup',e=>keys.delete(e.key));
-  function pointerMove(clientX){const rect=canvas.getBoundingClientRect();const x=(clientX-rect.left)*(canvas.width/rect.width); state.monkey.x = clamp(x, state.monkey.w/2, canvas.width - state.monkey.w/2);}
-  canvas.addEventListener('mousemove',e=>pointerMove(e.clientX));
-  canvas.addEventListener('touchmove',e=>{if(e.touches[0]) pointerMove(e.touches[0].clientX)},{passive:true});
+
+  let lastPointerX = null;
+  function pointerMove(clientX){
+    if(lastPointerX !== null){
+      const dx = clientX - lastPointerX;
+      state.monkey.x = clamp(state.monkey.x + dx, state.monkey.w/2, canvas.width - state.monkey.w/2);
+    }
+    lastPointerX = clientX;
+  }
+  canvas.addEventListener('mousemove', e => pointerMove(e.clientX));
+  canvas.addEventListener('touchmove', e => { if(e.touches[0]) pointerMove(e.touches[0].clientX); }, {passive:true});
 
   ui.startBtn.addEventListener('click',startGame);
   ui.shareBtn.addEventListener('click',share);
@@ -165,6 +156,7 @@
     state.timeAcc = 0;
     state.monkey.x = canvas.width/2;
     state.monkey.y = canvas.height - 80;
+    lastPointerX = null;
     ui.score.textContent='0'; ui.time.textContent=CONFIG.GAME_SECONDS; ui.lives.textContent='3'; ui.startBtn.textContent='다시 시작'; ui.shareBtn.classList.add('hidden');
     resetTimeBananaTimer();
     canvas.onclick = null;
@@ -175,9 +167,7 @@
   function loop(now){
     if(!state.running) return;
     const dt = (now - state.lastTick) / 1000 || 0;
-    if(!isFinite(dt) || dt < 0){ state.lastTick = now; state.rafId = requestAnimationFrame(loop); return; }
     state.lastTick = now;
-
     state.timeAcc += dt;
     while(state.timeAcc >= 1 && state.running){
       state.timeLeft = Math.max(0, state.timeLeft - 1);
@@ -185,17 +175,20 @@
     }
     ui.time.textContent = state.timeLeft;
     if(state.timeLeft <= 0 || state.lives <= 0){ endGame(); return; }
-
-    try { update(); draw(); state.frame++; }
-    catch(err){ console.error('[GameLoop]', err); endGame(); return; }
-
+    update(); draw(); state.frame++;
     state.rafId = requestAnimationFrame(loop);
   }
 
   // ========= SPAWN =========
-  function spawnOne(kind){ const speed=lerp(CONFIG.FALL_MIN,CONFIG.FALL_MAX+state.score*0.02,Math.random()); const vx=(Math.random()-0.5)*1.0; const sinAmp=lerp(CONFIG.DRIFT_SIN_MIN,CONFIG.DRIFT_SIN_MAX,Math.random()); const sinFreq=lerp(CONFIG.DRIFT_FREQ_MIN,CONFIG.DRIFT_FREQ_MAX,Math.random()); state.bananas.push({kind,x:rand(24,canvas.width-24),y:-30,vx,vy:speed,w:46,h:46,phase:Math.random()*Math.PI*2,sinAmp,sinFreq,ax:0}); }
-  function spawnPair(){ const centerX = rand(40, canvas.width-40); const leftX = clamp(centerX - CONFIG.PAIR_SPACING/2, 16, canvas.width-16); const rightX = clamp(centerX + CONFIG.PAIR_SPACING/2, 16, canvas.width-16); const speedBase = lerp(CONFIG.FALL_MIN, CONFIG.FALL_MAX+state.score*0.02, Math.random()); const amp1=lerp(CONFIG.DRIFT_SIN_MIN,CONFIG.DRIFT_SIN_MAX,Math.random()); const amp2=lerp(CONFIG.DRIFT_SIN_MIN,CONFIG.DRIFT_SIN_MAX,Math.random()); const f1=lerp(CONFIG.DRIFT_FREQ_MIN,CONFIG.DRIFT_FREQ_MAX,Math.random()); const f2=lerp(CONFIG.DRIFT_FREQ_MIN,CONFIG.DRIFT_FREQ_MAX,Math.random()); const goldOnLeft = Math.random()<0.5; const k1 = goldOnLeft ? 'gold' : 'rotten'; const k2 = goldOnLeft ? 'rotten' : 'gold'; state.bananas.push({kind:k1, x:leftX, y:-30, vx:-CONFIG.PAIR_VX_PUSH, vy:speedBase, w:46,h:46, phase:Math.random()*Math.PI*2, sinAmp:amp1, sinFreq:f1, ax:0}); state.bananas.push({kind:k2, x:rightX, y:-30, vx:+CONFIG.PAIR_VX_PUSH, vy:speedBase*1.02, w:46,h:46, phase:Math.random()*Math.PI*2, sinAmp:amp2, sinFreq:f2, ax:0}); }
-  function spawnTimeBanana(){ const speed=lerp(CONFIG.FALL_MIN+0.5,CONFIG.FALL_MAX+state.score*0.02,Math.random()); const vx=(Math.random()-0.5)*0.8; const sinAmp=lerp(CONFIG.DRIFT_SIN_MIN,CONFIG.DRIFT_SIN_MAX,Math.random()); const sinFreq=lerp(CONFIG.DRIFT_FREQ_MIN,CONFIG.DRIFT_FREQ_MAX,Math.random()); state.bananas.push({kind:'time',x:rand(24,canvas.width-24),y:-30,vx,vy:speed,w:50,h:50,phase:Math.random()*Math.PI*2,sinAmp,sinFreq,ax:0}); }
+  function spawnOne(kind){ state.bananas.push({kind,x:rand(24,canvas.width-24),y:-30,vx:(Math.random()-0.5),vy:lerp(CONFIG.FALL_MIN,CONFIG.FALL_MAX,Math.random()),w:46,h:46,phase:Math.random()*Math.PI*2,sinAmp:0.4,sinFreq:0.08,ax:0}); }
+  function spawnPair(){ 
+    const centerX = rand(40, canvas.width-40);
+    const leftX = clamp(centerX - CONFIG.PAIR_SPACING/2, 16, canvas.width-16);
+    const rightX = clamp(centerX + CONFIG.PAIR_SPACING/2, 16, canvas.width-16);
+    state.bananas.push({kind:'gold', x:leftX, y:-30, vx:-CONFIG.PAIR_VX_PUSH, vy:3, w:46,h:46, phase:0, sinAmp:0.3, sinFreq:0.07, ax:0});
+    state.bananas.push({kind:'rotten', x:rightX, y:-30, vx:+CONFIG.PAIR_VX_PUSH, vy:3, w:46,h:46, phase:0, sinAmp:0.3, sinFreq:0.07, ax:0});
+  }
+  function spawnTimeBanana(){ state.bananas.push({kind:'time',x:rand(24,canvas.width-24),y:-30,vx:(Math.random()-0.5)*0.8,vy:3,w:46,h:46,phase:0,sinAmp:0.3,sinFreq:0.07,ax:0}); }
   function resetTimeBananaTimer(){ const base=CONFIG.TIMEBANANA_PERIOD_S; const j=CONFIG.TIMEBANANA_JITTER_S; const period=(base + (Math.random()*2-1)*j); state.timeBananaFrames=Math.max(2, Math.round(period*60)); }
 
   // ========= UPDATE =========
@@ -211,129 +204,37 @@
         if(r<CONFIG.ROTTEN_CHANCE) kind='rotten';
         else if(r<CONFIG.ROTTEN_CHANCE+CONFIG.GOLDEN_CHANCE) kind='gold';
         spawnOne(kind);
-        if((kind==='gold'||kind==='rotten') && Math.random()<0.25){ spawnPair(); }
       }
     }
-
     state.timeBananaFrames--; if(state.timeBananaFrames<=0){ spawnTimeBanana(); resetTimeBananaTimer(); }
 
     for(let i=state.bananas.length-1;i>=0;i--){
       const b=state.bananas[i];
-      b.ax += (Math.random()*2-1)*CONFIG.DRIFT_AX; b.ax = clamp(b.ax,-CONFIG.DRIFT_AX,CONFIG.DRIFT_AX);
-      b.vx += b.ax; b.vx = clamp(b.vx,-CONFIG.DRIFT_VX_MAX,CONFIG.DRIFT_VX_MAX);
-      b.x += b.vx + Math.sin(state.frame*b.sinFreq + b.phase)*b.sinAmp;
-      b.y += b.vy;
-      const half=b.w/2;
-      if(b.x<half){ b.x=half; b.vx=Math.abs(b.vx)*0.6; b.phase += 0.9; }
-      if(b.x>canvas.width-half){ b.x=canvas.width-half; b.vx=-Math.abs(b.vx)*0.6; b.phase += 0.9; }
-
+      b.x += b.vx; b.y += b.vy;
       if(hit(b,state.monkey)){
         state.bananas.splice(i,1);
-        if(b.kind==='rotten'){
-          state.lives = Math.max(0, state.lives - 1); ui.lives.textContent = state.lives;
-          state.shake = CONFIG.SHAKE_FRAMES; state.monkeyFlash = CONFIG.MONKEY_FLASH;
-          addFloater(b.x, b.y, 'Oops.', 30);
-        } else if(b.kind==='time'){
-          state.timeLeft = Math.min(state.timeLeft + CONFIG.TIMEBANANA_ADD_S, CONFIG.GAME_SECONDS + 10);
-          ui.time.textContent = state.timeLeft;
-          addFloater(b.x, b.y, '⏱+'+CONFIG.TIMEBANANA_ADD_S+'s', 30);
-        } else {
-          const gain=(b.kind==='gold'?5:1); state.score+=gain; ui.score.textContent=state.score;
-          if(b.kind==='gold'){ addFloater(b.x,b.y,'Yum!', 30); }
-        }
-        if(state.score%6===0) state.spawnEvery=Math.max(14,state.spawnEvery-1);
-      } else if(b.y>canvas.height+40){
-        state.bananas.splice(i,1);
-      }
+        if(b.kind==='rotten'){ state.lives--; ui.lives.textContent=state.lives; }
+        else if(b.kind==='time'){ state.timeLeft += CONFIG.TIMEBANANA_ADD_S; }
+        else { state.score++; ui.score.textContent=state.score; }
+      } else if(b.y>canvas.height+40){ state.bananas.splice(i,1); }
     }
-
-    if(state.shake>0) state.shake--;
-    if(state.monkeyFlash>0) state.monkeyFlash--;
-    if(state.bubble.frames>0) state.bubble.frames--;
   }
 
   // ========= DRAW =========
   function draw(){
-    let ox=0, oy=0; if(state.shake>0){ ox=Math.round((Math.random()*2-1)*4); oy=Math.round((Math.random()*2-1)*4); }
-    ctx.save(); ctx.translate(ox,oy);
-    ctx.clearRect(-ox,-oy,canvas.width,canvas.height);
-    drawSky();
-    if(state.frame<120) drawTitleRibbon(CONFIG.TITLE_TEXT);
-    ctx.fillStyle='rgba(0,0,0,0.08)'; ctx.fillRect(0,canvas.height-20,canvas.width,4);
-    for(const b of state.bananas) drawBanana(b);
-    drawMonkey(state.monkey.x,state.monkey.y,state.monkey.w,state.monkey.h);
-    if(state.monkeyFlash>0){ ctx.globalAlpha = 0.35; ctx.fillStyle = '#ff3b30'; roundedRect(state.monkey.x-state.monkey.w/2, state.monkey.y-state.monkey.h/2, state.monkey.w, state.monkey.h, 16, true); ctx.globalAlpha = 1.0; }
-    if(state.bubble.frames>0){ drawBubble(state.monkey.x, state.monkey.y-70, state.bubble.text); }
-
-    for(let i=state.floaters.length-1;i>=0;i--){
-      const f=state.floaters[i]; ctx.save();
-      const alpha=Math.max(0, f.frames/30); ctx.globalAlpha = alpha;
-      ctx.fillStyle='#fff'; ctx.font='900 16px system-ui, Apple SD Gothic Neo, Noto Sans KR'; ctx.textAlign='center';
-      ctx.strokeStyle='rgba(0,0,0,0.35)'; ctx.lineWidth=4; ctx.strokeText(f.text, f.x, f.y);
-      ctx.fillStyle='#fff'; ctx.fillText(f.text, f.x, f.y);
-      ctx.restore(); f.y -= 0.7; f.frames--; if(f.frames<=0) state.floaters.splice(i,1);
-    }
-
-    ctx.restore();
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle='#fff7d1'; ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle='#6b4f2a'; ctx.fillRect(state.monkey.x-44,state.monkey.y-44,88,88);
+    for(const b of state.bananas){ ctx.fillStyle=(b.kind==='rotten')?'#7a5a3a':(b.kind==='gold'?'#ffd84d':(b.kind==='time'?'#7ad1ff':'#ffe065')); ctx.fillRect(b.x-23,b.y-23,46,46); }
   }
 
-  // ========= END =========
-  function endGame(){
-    if(state.rafId){ cancelAnimationFrame(state.rafId); state.rafId = null; }
-    state.running=false; draw();
-    ctx.fillStyle='rgba(0,0,0,0.45)'; ctx.fillRect(0,0,canvas.width,canvas.height);
-    const msg=`SCORE ${state.score}`;
-    ctx.fillStyle='#fff'; ctx.font='bold 24px system-ui, Apple SD Gothic Neo, Noto Sans KR'; ctx.textAlign='center';
-    ctx.fillText('Banana Time 끝!',canvas.width/2,canvas.height/2-22);
-    ctx.fillText(msg,canvas.width/2,canvas.height/2+10);
-    const best=Number(localStorage.getItem('bestScore')||0); 
-    if(state.score > best) { 
-      localStorage.setItem('bestScore', state.score); 
-      ui.best.textContent = state.score;
-    } else {
-      ui.best.textContent = best;
-    }
-    ui.shareBtn.classList.remove('hidden');
-  }
+  function endGame(){ state.running=false; ctx.fillStyle='rgba(0,0,0,0.45)'; ctx.fillRect(0,0,canvas.width,canvas.height); ctx.fillStyle='#fff'; ctx.fillText(`SCORE ${state.score}`,canvas.width/2,canvas.height/2); ui.shareBtn.classList.remove('hidden'); }
+  function share(){ alert('공유 링크 복사!'); }
 
-  // ========= DRAW HELPERS =========
-  function drawSky(){ 
-    const g=ctx.createLinearGradient(0,0,0,canvas.height); 
-    g.addColorStop(0,'#fff7d1'); 
-    g.addColorStop(1,'#fff1b0'); 
-    ctx.fillStyle=g; 
-    ctx.fillRect(0,0,canvas.width,canvas.height); 
-  }
-  function bubbleDot(x,y,r){ ctx.beginPath(); ctx.ellipse(x,y,r,r*.6,0,0,Math.PI*2); ctx.fill() }
-  function drawTitleRibbon(text){ ctx.save(); ctx.translate(canvas.width/2, 70); ctx.fillStyle = 'rgba(0,0,0,.08)'; roundedRect(-150,-22,300,44,12,true); ctx.fillStyle = '#111'; ctx.font='900 18px system-ui, Apple SD Gothic Neo, Noto Sans KR'; ctx.textAlign='center'; ctx.fillText(text,0,6); ctx.restore() }
-  function roundedRect(x,y,w,h,r,fill){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); if(fill) ctx.fill(); else ctx.stroke() }
-  function drawMonkey(cx,cy,w,h){ if(state.assets.monkey){ ctx.drawImage(state.assets.monkey,cx-w/2,cy-h/2,w,h) } else { ctx.save(); ctx.translate(cx,cy); ctx.fillStyle='#6b4f2a'; roundedRect(-w/2,-h/2,w,h,20,true); ctx.fillStyle='#f7d9b1'; roundedRect(-w/2+12,-h/2+14,w-24,h-28,16,true); ctx.fillStyle='#1b1b1b'; ctx.beginPath(); ctx.arc(-14,-8,6,0,Math.PI*2); ctx.arc(14,-8,6,0,Math.PI*2); ctx.fill(); ctx.restore() } }
-  function drawBanana(b){ if(b.kind==='gold'&&state.assets.gold){ ctx.drawImage(state.assets.gold,b.x-b.w/2,b.y-b.h/2,b.w,b.h) } else if(b.kind==='rotten'&&state.assets.rotten){ ctx.drawImage(state.assets.rotten,b.x-b.w/2,b.y-b.h/2,b.w,b.h) } else if(b.kind==='time'&&state.assets.time){ ctx.drawImage(state.assets.time,b.x-b.w/2,b.y-b.h/2,b.w,b.h) } else if(state.assets.banana){ ctx.drawImage(state.assets.banana,b.x-b.w/2,b.y-b.h/2,b.w,b.h) } else { ctx.save(); ctx.translate(b.x,b.y); ctx.fillStyle = (b.kind==='rotten')? '#7a5a3a' : (b.kind==='gold'? '#ffd84d' : (b.kind==='time'? '#7ad1ff' : '#ffe065')); ctx.beginPath(); ctx.ellipse(0,0,b.w*.55,b.h*.35,-0.6,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#8d6e00'; ctx.fillRect(-b.w*0.1,-b.h*0.2,b.w*0.18,b.h*0.15); ctx.restore() } }
-  function drawBubble(x,y,text){ ctx.save(); ctx.translate(x,y); const pad=8; ctx.font='600 14px system-ui, Apple SD Gothic Neo'; const w=ctx.measureText(text).width+pad*2; const h=26; ctx.fillStyle='rgba(0,0,0,.6)'; roundedRect(-w/2,-h, w,h, 10, true); ctx.fillStyle='#fff'; ctx.textAlign='center'; ctx.fillText(text,0,-8); ctx.restore() }
-  function addFloater(x,y,text,frames){ state.floaters.push({x,y,text,frames:frames||28}); }
-
-  // ========= SHARE =========
-  function share(){ const text=`떠숭이와 점수 ${state.score}!`; const url=CONFIG.SHOP_URL; if(navigator.share){ navigator.share({title:'24/7 With 떠숭이',text,url}).catch(()=>{}) } else { navigator.clipboard.writeText(`${text} — ${url}`); alert('공유 링크를 복사했어요!') } }
-
-  // ========= BOOT =========
-  async function boot(){
-    const [monkey,banana,gold,rotten,time,heart,logo]=await Promise.all([
-      loadImage('monkey.png'), loadImage('banana.png'), loadImage('banana_gold.png'),
-      loadImage('banana_rotten.png'), loadImage('banana_time.png'),
-      loadImage('heart.png'), loadImage('logo.png')
-    ]);
-    state.assets={monkey,banana,gold,rotten,time,heart,logo};
-    fitCanvas();
-    draw();
-    ctx.save(); ctx.globalAlpha=.9; ctx.fillStyle='rgba(0,0,0,.35)'; ctx.fillRect(0,0,canvas.width,canvas.height); ctx.restore();
-    ctx.fillStyle='#fff'; ctx.textAlign='center';
-    ctx.font='800 18px system-ui, Apple SD Gothic Neo, Noto Sans KR'; ctx.fillText('드래그해서 이동',canvas.width/2,canvas.height/2-6);
-    ctx.font='900 22px system-ui, Apple SD Gothic Neo'; ctx.fillText('Banana Time',canvas.width/2,canvas.height/2+28);
-    ui.best.textContent=localStorage.getItem('Best Score')||0;
-  }
-  state.lastTick=performance.now();
+  async function boot(){ fitCanvas(); draw(); }
   boot();
   </script>
 </body>
 </html>
+
 
