@@ -327,12 +327,13 @@
     draw();
     ctx.save(); ctx.globalAlpha=.9; ctx.fillStyle='rgba(0,0,0,.35)'; ctx.fillRect(0,0,canvas.width,canvas.height); ctx.restore();
     ctx.fillStyle='#fff'; ctx.textAlign='center';
-    ctx.font='800 18px system-ui, Apple SD Gothic Neo, Noto Sans KR'; ctx.fillText('탭/드래그 또는 ← → 로 이동',canvas.width/2,canvas.height/2-6);
-    ctx.font='900 22px system-ui, Apple SD Gothic Neo'; ctx.fillText('Banana Time — 떠숭이랑 함께!',canvas.width/2,canvas.height/2+28);
-    ui.best.textContent=localStorage.getItem('bestScore')||0;
+    ctx.font='800 18px system-ui, Apple SD Gothic Neo, Noto Sans KR'; ctx.fillText('드래그해서 이동',canvas.width/2,canvas.height/2-6);
+    ctx.font='900 22px system-ui, Apple SD Gothic Neo'; ctx.fillText('Banana Time',canvas.width/2,canvas.height/2+28);
+    ui.best.textContent=localStorage.getItem('Best Score')||0;
   }
   state.lastTick=performance.now();
   boot();
   </script>
 </body>
 </html>
+
