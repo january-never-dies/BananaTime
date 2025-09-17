@@ -276,7 +276,23 @@
     ctx.fillStyle='rgba(0,0,0,0.08)'; ctx.fillRect(0,canvas.height-20,canvas.width,4);
     for(const b of state.bananas) drawBanana(b);
     drawMonkey(state.monkey.x,state.monkey.y,state.monkey.w,state.monkey.h);
-    if(state.monkeyFlash>0){ ctx.globalAlpha = 0.35; ctx.fillStyle = '#ff3b30'; roundedRect(state.monkey.x-state.monkey.w/2, state.monkey.y-state.monkey.h/2, state.monkey.w, state.monkey.h, 16, true); ctx.globalAlpha = 1.0; }
+    if(state.monkeyFlash>0 && state.assets.monkey){
+  ctx.save();
+  ctx.globalAlpha = 0.35;
+  ctx.globalCompositeOperation = 'source-atop';
+  ctx.fillStyle = '#ff3b30';
+  // 원숭이 이미지를 기준으로만 빨간색 덮기
+  ctx.drawImage(state.assets.monkey,
+    state.monkey.x - state.monkey.w/2,
+    state.monkey.y - state.monkey.h/2,
+    state.monkey.w, state.monkey.h
+  );
+  ctx.fillRect(state.monkey.x - state.monkey.w/2,
+    state.monkey.y - state.monkey.h/2,
+    state.monkey.w, state.monkey.h
+  );
+  ctx.restore();
+}
     if(state.bubble.frames>0){ drawBubble(state.monkey.x, state.monkey.y-70, state.bubble.text); }
 
     // floating texts
@@ -312,16 +328,18 @@
   }
 
   // ========= DRAW HELPERS =========
-  function drawSky(){ 
+  function drawSky(){
+  if(state.assets.bg){
+    ctx.drawImage(state.assets.bg, 0, 0, canvas.width, canvas.height);
+  } else {
+    // 이미지가 없을 경우 대비: 기존 그라디언트 fallback
     const g=ctx.createLinearGradient(0,0,0,canvas.height); 
     g.addColorStop(0,'#fff7d1'); 
     g.addColorStop(1,'#fff1b0'); 
     ctx.fillStyle=g; 
-    ctx.fillRect(0,0,canvas.width,canvas.height); 
-    // 배경 원들 제거 - 이 부분을 주석처리
-    // ctx.fillStyle='rgba(255,255,255,.7)'; 
-    // for(let i=0;i<6;i++) bubbleDot(rand(0,canvas.width),rand(40,200),rand(40,110))
+    ctx.fillRect(0,0,canvas.width,canvas.height);
   }
+}
   function bubbleDot(x,y,r){ ctx.beginPath(); ctx.ellipse(x,y,r,r*.6,0,0,Math.PI*2); ctx.fill() }
   function drawTitleRibbon(text){ ctx.save(); ctx.translate(canvas.width/2, 70); ctx.fillStyle = 'rgba(0,0,0,.08)'; roundedRect(-150,-22,300,44,12,true); ctx.fillStyle = '#111'; ctx.font='900 18px system-ui, Apple SD Gothic Neo, Noto Sans KR'; ctx.textAlign='center'; ctx.fillText(text,0,6); ctx.restore() }
   function roundedRect(x,y,w,h,r,fill){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); if(fill) ctx.fill(); else ctx.stroke() }
@@ -338,7 +356,8 @@
     const [monkey,banana,gold,rotten,time,heart,logo]=await Promise.all([
       loadImage('monkey.png'), loadImage('banana.png'), loadImage('banana_gold.png'),
       loadImage('banana_rotten.png'), loadImage('banana_time.png'),
-      loadImage('heart.png'), loadImage('logo.png')
+      loadImage('heart.png'), loadImage('logo.png'),
+      loadImage('background.png')
     ]);
     state.assets={monkey,banana,gold,rotten,time,heart,logo};
     fitCanvas(); // 최초 맞춤
