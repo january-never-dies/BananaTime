@@ -353,13 +353,13 @@
 
   // ========= BOOT =========
   async function boot(){
-    const [monkey,banana,gold,rotten,time,heart,logo]=await Promise.all([
+    const [monkey,banana,gold,rotten,time,heart,logo,bg]=await Promise.all([
       loadImage('monkey.png'), loadImage('banana.png'), loadImage('banana_gold.png'),
       loadImage('banana_rotten.png'), loadImage('banana_time.png'),
       loadImage('heart.png'), loadImage('logo.png'),
       loadImage('background.png')
     ]);
-    state.assets={monkey,banana,gold,rotten,time,heart,logo};
+    state.assets={monkey,banana,gold,rotten,time,heart,logo,bg};
     fitCanvas(); // 최초 맞춤
     draw();
     // 첫 안내
