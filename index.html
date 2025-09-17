@@ -158,7 +158,7 @@
   const keys=new Set(); addEventListener('keydown',e=>keys.add(e.key)); addEventListener('keyup',e=>keys.delete(e.key));
   let touchStartX = null;
   function pointerStart(clientX){const rect=canvas.getBoundingClientRect();touchStartX=(clientX-rect.left)*(canvas.width/rect.width);}
-  function pointerMove(clientX){if(touchStartX===null)return;const rect=canvas.getBoundingClientRect();const x=(clientX-rect.left)*(canvas.width/rect.width);const deltaX=x-touchStartX;state.monkey.x = clamp(state.monkey.x+deltaX*0.5, state.monkey.w/2, canvas.width - state.monkey.w/2);touchStartX=x;}
+  function pointerMove(clientX){if(touchStartX===null)return;const rect=canvas.getBoundingClientRect();const x=(clientX-rect.left)*(canvas.width/rect.width);const deltaX=x-touchStartX;state.monkey.x = clamp(state.monkey.x+deltaX*1.3, state.monkey.w/2, canvas.width - state.monkey.w/2);touchStartX=x;}
   canvas.addEventListener('mousedown',e=>{pointerStart(e.clientX);canvas.addEventListener('mousemove',mouseMoveHandler);});
   canvas.addEventListener('touchstart',e=>{if(e.touches[0])pointerStart(e.touches[0].clientX);},{passive:true});
   function mouseMoveHandler(e){pointerMove(e.clientX);}
