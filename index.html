@@ -14,7 +14,7 @@
       with reserved font name "Neo둥근모" and "NeoDunggeunmo".
 
       이 앱/게임은 해당 글꼴의 라이선스 전문을 포함합니다.
-      전문은 /licenses/neodgm-LICENSE.txt에서 확인할 수 있습니다.
+      전문은 licenses/neodgm-LICENSE.txt에서 확인할 수 있습니다.
     ============================================================================ */
     @font-face{
       font-family: 'NeoDunggeunmo';
@@ -209,7 +209,22 @@
   };
 
   // ========= UTIL =========
-  function loadImage(src){return new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.onerror=()=>r(null);i.src=src})}
+  // 같은 폴더에 이미지/폰트가 있는 전제
+  const ASSET_BASE = './';
+
+  function loadImage(src){
+    return new Promise((resolve) => {
+      const i = new Image();
+      i.onload = () => resolve(i);
+      i.onerror = (e) => {
+        console.warn('[ImageLoadFail]', src, e?.message || e);
+        resolve(null);
+      };
+      i.src = src;
+    });
+  }
+  const asset = (name) => `${ASSET_BASE}${name}`;
+
   function clamp(x,a,b){return Math.max(a,Math.min(b,x))}
   function lerp(a,b,t){return a+(b-a)*t}
   function rand(min,max){return Math.random()*(max-min)+min}
@@ -229,7 +244,7 @@
   // ===== Canvas font helpers (NeoDunggeunmo) =====
   const FONT_NAME = 'NeoDunggeunmo, Apple SD Gothic Neo, Noto Sans KR, system-ui, sans-serif';
   const f = (w, px) => `${w} ${px}px ${FONT_NAME}`;
-  const fnt = (weight, size) => f(weight, size); // alias
+  const fnt = (weight, size) => f(weight, size);
 
   // ========= RESPONSIVE CANVAS =========
   function fitCanvas(){
@@ -457,10 +472,14 @@
     await document.fonts.ready;
 
     const [monkey,banana,gold,rotten,time,heart,logo,bg]=await Promise.all([
-      loadImage('monkey.png'), loadImage('banana.png'), loadImage('banana_gold.png'),
-      loadImage('banana_rotten.png'), loadImage('banana_time.png'),
-      loadImage('heart.png'), loadImage('logo.png'),
-      loadImage('background.png')
+      loadImage(asset('monkey.png')),
+      loadImage(asset('banana.png')),
+      loadImage(asset('banana_gold.png')),
+      loadImage(asset('banana_rotten.png')),
+      loadImage(asset('banana_time.png')),
+      loadImage(asset('heart.png')),
+      loadImage(asset('logo.png')),
+      loadImage(asset('background.png')),
     ]);
     state.assets={monkey,banana,gold,rotten,time,heart,logo,bg};
     fitCanvas(); // 최초 맞춤
