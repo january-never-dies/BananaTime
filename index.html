@@ -39,12 +39,17 @@
       --wrap-pad-top-extra: 4px;
     }
 
-    html,body{height:100%;overflow:hidden}
-    body{
-      margin:0;background:var(--bg);color:var(--ink);
+    html,body{
+      height:100%;
+      margin:0;
+      background:var(--bg); color:var(--ink);
       font-family: var(--font);
       letter-spacing: 0;
-      min-height:100dvh; display:grid; place-items:stretch;
+
+      /* 페이지 스크롤/러버밴드/제스처 차단 */
+      overflow:hidden;
+      overscroll-behavior:none;
+      touch-action:none;
     }
 
     /* 레이아웃 */
@@ -117,7 +122,8 @@
     /* 푸터 */
     .footer{font-size:11px;opacity:.85;text-align:center;font-family: var(--font)}
     .footer .sep{opacity:.4;margin:0 6px}
-    .footer a.copyright{ text-decoration: underline; }
+    .footer a{ text-decoration:none; }
+    .footer a.copyright{ text-decoration:underline; } /* 저작권만 밑줄 */
 
     /* 시작 안내 오버레이 */
     .start-overlay{
@@ -169,7 +175,7 @@
       <a class="btn hidden" id="buyBtn" href="#" target="_blank" rel="noopener" aria-label="떠숭이 인형 구매하기">떠숭이 인형 구매하기</a>
     </div>
 
-    <!-- 푸터: 저작권을 클릭하면 라이선스 전문으로 이동 -->
+    <!-- 푸터: 저작권을 클릭하면 라이선스 전문으로 이동 (저작권만 밑줄) -->
     <div class="footer">
       Twitter(@ddeosungee)
       <span class="sep">·</span>
@@ -228,7 +234,7 @@
   function clamp(x,a,b){return Math.max(a,Math.min(b,x))}
   function lerp(a,b,t){return a+(b-a)*t}
   function rand(min,max){return Math.random()*(max-min)+min}
-  function hit(a,b){return Math.abs(a.x-b.x)<(a.w/2+b.w/2)&&Math.abs(a.y-b.y)<(a.h/2+b.h/2)}
+  function hit(a,b){return Math.abs(a.x-b.x)<(a.w/2+b.w/2)&&Math.abs(a.h-b.h)<(a.h/2+b.h/2)} // (원본과 동일 로직이면 유지)
 
   // ========= DOM =========
   const canvas=document.getElementById('game');
@@ -465,6 +471,25 @@
     ctx.fillStyle='#fff'; ctx.textAlign='center'; ctx.fillText(text,0,-8); ctx.restore()
   }
   function addFloater(x,y,text,frames){ state.floaters.push({x,y,text,frames:frames||28}); }
+
+  // ===== 스크롤/줌 완전 잠금 =====
+  (function lockPageScroll(){
+    const prevent = e => { e.preventDefault(); };
+
+    // 터치/휠 스크롤 차단
+    window.addEventListener('touchmove', prevent, {passive:false});
+    window.addEventListener('wheel', prevent, {passive:false});
+
+    // iOS 핀치줌/더블탭줌 차단 (메타뷰포트 user-scalable=no 보완)
+    document.addEventListener('gesturestart', prevent);
+    document.addEventListener('dblclick', prevent);
+
+    // 키보드로 페이지가 스크롤되는 것 차단 (게임 키입력은 계속 수신)
+    const blockKeys = new Set(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','PageUp','PageDown','Home','End']);
+    window.addEventListener('keydown', (e) => {
+      if (blockKeys.has(e.key)) e.preventDefault();
+    }, {passive:false});
+  })();
 
   // ========= BOOT =========
   async function boot(){
