@@ -42,9 +42,7 @@
       background:var(--bg); color:var(--ink);
       font-family: var(--font);
       letter-spacing: 0;
-      overflow:hidden;
-      overscroll-behavior:none;
-      touch-action:none;
+      overflow:hidden; overscroll-behavior:none; touch-action:none;
     }
 
     .wrap{
@@ -103,8 +101,7 @@
       appearance:none;border:none;background:var(--brand);color:#1b1b1b;font-weight:800;
       padding:10px 14px;border-radius:12px;cursor:pointer;
       box-shadow:0 6px 16px rgba(0,0,0,.15);text-decoration:none;display:inline-block;
-      font-family: var(--font);
-      letter-spacing:.5px
+      font-family: var(--font); letter-spacing:.5px
     }
     button.btn:active{transform:translateY(1px)}
     .hidden{display:none!important}
@@ -197,20 +194,16 @@
   };
 
   // ========= UTIL =========
-  // 현재 문서 기준으로 자산 기본 경로 계산 (Pages/서브폴더/로컬 모두 대응)
+  // 현재 문서 기준으로 자산 경로 계산 (Pages/서브폴더/로컬 모두 대응)
   const ASSET_BASE = new URL('./', location.href);
   const asset = (name) => new URL(name, ASSET_BASE).toString();
 
   function loadImage(src){
     return new Promise((resolve) => {
       const img = new Image();
-      // 같은 오리진(Pages)에서는 필요 없지만, raw/기타 호스트에서 열 때를 대비
-      img.crossOrigin = 'anonymous';
+      img.crossOrigin = 'anonymous'; // 다른 호스트에서도 안전하게
       img.onload = () => resolve(img);
-      img.onerror = (e) => {
-        console.error('[ImageLoadFail]', src, e?.message || e);
-        resolve(null);
-      };
+      img.onerror = (e) => { console.error('[ImageLoadFail]', src, e?.message || e); resolve(null); };
       img.src = src;
     });
   }
@@ -263,6 +256,24 @@
     bubble:{text:'',frames:0},
     floaters:[]
   };
+
+  // ========= SHARE HANDLER (추가) =========
+  function share(){
+    const url = location.href;
+    const title = `${CONFIG.TITLE_TEXT} — SCORE ${state.score}`;
+    const text  = `내 점수 ${state.score}점! 떠숭이 밥주기 해봐 🍌`;
+
+    if (navigator.share) {
+      navigator.share({ title, text, url }).catch(()=>{});
+    } else {
+      try {
+        navigator.clipboard?.writeText(url);
+        alert('링크가 복사되었습니다:\n' + url);
+      } catch {
+        prompt('아래 링크를 복사해 주세요:', url);
+      }
+    }
+  }
 
   // ========= INPUT =========
   const keys=new Set(); addEventListener('keydown',e=>keys.add(e.key)); addEventListener('keyup',e=>keys.delete(e.key));
@@ -434,6 +445,7 @@
     ctx.restore();
   }
 
+  // ========= END =========
   function endGame(){
     if(state.rafId){ cancelAnimationFrame(state.rafId); state.rafId = null; }
     state.running=false; draw();
@@ -486,6 +498,7 @@
   }
   function addFloater(x,y,text,frames){ state.floaters.push({x,y,text,frames:frames||28}); }
 
+  // ===== 스크롤/줌 완전 잠금 =====
   (function lockPageScroll(){
     const prevent = e => { e.preventDefault(); };
     window.addEventListener('touchmove', prevent, {passive:false});
