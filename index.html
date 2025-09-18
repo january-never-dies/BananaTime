@@ -12,9 +12,8 @@
       NeoDunggeunmo (Neo둥근모)
       Copyright © 2017-2024, Eunbin Jeong (Dalgona.) <project-neodgm@dalgona.dev>
       with reserved font name "Neo둥근모" and "NeoDunggeunmo".
-
       이 앱/게임은 해당 글꼴의 라이선스 전문을 포함합니다.
-      전문은 licenses/neodgm-LICENSE.txt에서 확인할 수 있습니다.
+      전문은 neodgm-LICENSE.txt에서 확인할 수 있습니다.
     ============================================================================ */
     @font-face{
       font-family: 'NeoDunggeunmo';
@@ -179,7 +178,7 @@
     <div class="footer">
       Twitter(@ddeosungee)
       <span class="sep">·</span>
-      <a class="copyright" href="licenses/neodgm-LICENSE.txt" target="_blank" rel="noopener">
+      <a class="copyright" href="neodgm-LICENSE.txt" target="_blank" rel="noopener">
         Copyright © 2017-2024, Eunbin Jeong (Dalgona.) &lt;project-neodgm@dalgona.dev&gt;
         with reserved font name "Neo둥근모" and "NeoDunggeunmo".
       </a>
@@ -215,17 +214,13 @@
   };
 
   // ========= UTIL =========
-  // 같은 폴더에 이미지/폰트가 있는 전제
   const ASSET_BASE = './';
 
   function loadImage(src){
     return new Promise((resolve) => {
       const i = new Image();
       i.onload = () => resolve(i);
-      i.onerror = (e) => {
-        console.warn('[ImageLoadFail]', src, e?.message || e);
-        resolve(null);
-      };
+      i.onerror = (e) => { console.warn('[ImageLoadFail]', src, e?.message || e); resolve(null); };
       i.src = src;
     });
   }
@@ -234,7 +229,11 @@
   function clamp(x,a,b){return Math.max(a,Math.min(b,x))}
   function lerp(a,b,t){return a+(b-a)*t}
   function rand(min,max){return Math.random()*(max-min)+min}
-  function hit(a,b){return Math.abs(a.x-b.x)<(a.w/2+b.w/2)&&Math.abs(a.h-b.h)<(a.h/2+b.h/2)} // (원본과 동일 로직이면 유지)
+  /* 충돌 판정 오타 수정 */
+  function hit(a,b){
+    return Math.abs(a.x - b.x) < (a.w/2 + b.w/2) &&
+           Math.abs(a.y - b.y) < (a.h/2 + b.h/2);
+  }
 
   // ========= DOM =========
   const canvas=document.getElementById('game');
@@ -270,7 +269,7 @@
     running:false, frame:0, score:0, timeLeft:CONFIG.GAME_SECONDS,
     lives:3, shake:0, monkeyFlash:0,
     monkey:{x:180,y:560,w:88,h:88}, bananas:[],
-    assets:{monkey:null,banana:null,gold:null,rotten:null,time:null,heart:null,logo:null,bg:null},
+    assets:{monkey:null,gold:null,rotten:null,time:null,heart:null,logo:null,bg:null},
     lastTick:0, spawnEvery:CONFIG.BASE_SPAWN, rafId:null, timeAcc:0,
     timeBananaFrames: 0,
     bubble:{text:'',frames:0},
@@ -298,14 +297,11 @@
     state.running=true; state.frame=0; state.score=0; state.timeLeft=CONFIG.GAME_SECONDS; state.lives=3; state.shake=0; state.monkeyFlash=0; state.bananas=[]; state.spawnEvery=CONFIG.BASE_SPAWN;
     state.timeAcc = 0;
 
-    // HUD 초기화
     ui.score.textContent='0'; ui.time.textContent=CONFIG.GAME_SECONDS; ui.lives.textContent='3';
     ui.startBtn.textContent='다시 시작'; ui.shareBtn.classList.add('hidden'); ui.buyBtn.classList.add('hidden');
 
-    // 오버레이 닫기
     ui.startOverlay.classList.add('hidden');
 
-    // 원숭이 위치 조정
     state.monkey.x = canvas.width/2;
     state.monkey.y = canvas.height - 80;
 
@@ -336,10 +332,41 @@
   }
 
   // ========= SPAWN =========
-  function spawnOne(kind){ const speed=lerp(CONFIG.FALL_MIN,CONFIG.FALL_MAX+state.score*0.02,Math.random()); const vx=(Math.random()-0.5)*1.0; const sinAmp=lerp(CONFIG.DRIFT_SIN_MIN,CONFIG.DRIFT_SIN_MAX,Math.random()); const sinFreq=lerp(CONFIG.DRIFT_FREQ_MIN,CONFIG.DRIFT_FREQ_MAX,Math.random()); state.bananas.push({kind,x:rand(24,canvas.width-24),y:-30,vx,vy:speed,w:46,h:46,phase:Math.random()*Math.PI*2,sinAmp,sinFreq,ax:0}); }
-  function spawnPair(){ const centerX = rand(40, canvas.width-40); const leftX = clamp(centerX - CONFIG.PAIR_SPACING/2, 16, canvas.width-16); const rightX = clamp(centerX + CONFIG.PAIR_SPACING/2, 16, canvas.width-16); const speedBase = lerp(CONFIG.FALL_MIN, CONFIG.FALL_MAX+state.score*0.02, Math.random()); const amp1=lerp(CONFIG.DRIFT_SIN_MIN,CONFIG.DRIFT_SIN_MAX,Math.random()); const amp2=lerp(CONFIG.DRIFT_SIN_MIN,CONFIG.DRIFT_SIN_MAX,Math.random()); const f1=lerp(CONFIG.DRIFT_FREQ_MIN,CONFIG.DRIFT_FREQ_MAX,Math.random()); const f2=lerp(CONFIG.DRIFT_FREQ_MIN,CONFIG.DRIFT_FREQ_MAX,Math.random()); const goldOnLeft = Math.random()<0.5; const k1 = goldOnLeft ? 'gold' : 'rotten'; const k2 = goldOnLeft ? 'rotten' : 'gold'; state.bananas.push({kind:k1, x:leftX, y:-30, vx:-CONFIG.PAIR_VX_PUSH, vy:speedBase, w:46,h:46, phase:Math.random()*Math.PI*2, sinAmp:amp1, sinFreq:f1, ax:0}); state.bananas.push({kind:k2, x:rightX, y:-30, vx:+CONFIG.PAIR_VX_PUSH, vy:speedBase*1.02, w:46,h:46, phase:Math.random()*Math.PI*2, sinAmp:amp2, sinFreq:f2, ax:0}); }
-  function spawnTimeBanana(){ const speed=lerp(CONFIG.FALL_MIN+0.5,CONFIG.FALL_MAX+state.score*0.02,Math.random()); const vx=(Math.random()-0.5)*0.8; const sinAmp=lerp(CONFIG.DRIFT_SIN_MIN,CONFIG.DRIFT_SIN_MAX,Math.random()); const sinFreq=lerp(CONFIG.DRIFT_FREQ_MIN,CONFIG.DRIFT_FREQ_MAX,Math.random()); state.bananas.push({kind:'time',x:rand(24,canvas.width-24),y:-30,vx,vy:speed,w:46,h:46,phase:Math.random()*Math.PI*2,sinAmp,sinFreq,ax:0}); }
-  function resetTimeBananaTimer(){ const base=CONFIG.TIMEBANANA_PERIOD_S; const j=CONFIG.TIMEBANANA_JITTER_S; const period=(base + (Math.random()*2-1)*j); state.timeBananaFrames=Math.max(2, Math.round(period*60)); }
+  function spawnOne(kind){
+    const speed=lerp(CONFIG.FALL_MIN,CONFIG.FALL_MAX+state.score*0.02,Math.random());
+    const vx=(Math.random()-0.5)*1.0;
+    const sinAmp=lerp(CONFIG.DRIFT_SIN_MIN,CONFIG.DRIFT_SIN_MAX,Math.random());
+    const sinFreq=lerp(CONFIG.DRIFT_FREQ_MIN,CONFIG.DRIFT_FREQ_MAX,Math.random());
+    state.bananas.push({kind,x:rand(24,canvas.width-24),y:-30,vx,vy:speed,w:46,h:46,phase:Math.random()*Math.PI*2,sinAmp,sinFreq,ax:0});
+  }
+  function spawnPair(){
+    const centerX = rand(40, canvas.width-40);
+    const leftX = clamp(centerX - CONFIG.PAIR_SPACING/2, 16, canvas.width-16);
+    const rightX = clamp(centerX + CONFIG.PAIR_SPACING/2, 16, canvas.width-16);
+    const speedBase = lerp(CONFIG.FALL_MIN, CONFIG.FALL_MAX+state.score*0.02, Math.random());
+    const amp1=lerp(CONFIG.DRIFT_SIN_MIN,CONFIG.DRIFT_SIN_MAX,Math.random());
+    const amp2=lerp(CONFIG.DRIFT_SIN_MIN,CONFIG.DRIFT_SIN_MAX,Math.random());
+    const f1=lerp(CONFIG.DRIFT_FREQ_MIN,CONFIG.DRIFT_FREQ_MAX,Math.random());
+    const f2=lerp(CONFIG.DRIFT_FREQ_MIN,CONFIG.DRIFT_FREQ_MAX,Math.random());
+    const goldOnLeft = Math.random()<0.5;
+    const k1 = goldOnLeft ? 'gold' : 'rotten';
+    const k2 = goldOnLeft ? 'rotten' : 'gold';
+    state.bananas.push({kind:k1, x:leftX, y:-30, vx:-CONFIG.PAIR_VX_PUSH, vy:speedBase, w:46,h:46, phase:Math.random()*Math.PI*2, sinAmp:amp1, sinFreq:f1, ax:0});
+    state.bananas.push({kind:k2, x:rightX, y:-30, vx:+CONFIG.PAIR_VX_PUSH, vy:speedBase*1.02, w:46,h:46, phase:Math.random()*Math.PI*2, sinAmp:amp2, sinFreq:f2, ax:0});
+  }
+  function spawnTimeBanana(){
+    const speed=lerp(CONFIG.FALL_MIN+0.5,CONFIG.FALL_MAX+state.score*0.02,Math.random());
+    const vx=(Math.random()-0.5)*0.8;
+    const sinAmp=lerp(CONFIG.DRIFT_SIN_MIN,CONFIG.DRIFT_SIN_MAX,Math.random());
+    const sinFreq=lerp(CONFIG.DRIFT_FREQ_MIN,CONFIG.DRIFT_FREQ_MAX,Math.random());
+    state.bananas.push({kind:'time',x:rand(24,canvas.width-24),y:-30,vx,vy:speed,w:46,h:46,phase:Math.random()*Math.PI*2,sinAmp,sinFreq,ax:0});
+  }
+  function resetTimeBananaTimer(){
+    const base=CONFIG.TIMEBANANA_PERIOD_S;
+    const j=CONFIG.TIMEBANANA_JITTER_S;
+    const period=(base + (Math.random()*2-1)*j);
+    state.timeBananaFrames=Math.max(2, Math.round(period*60));
+  }
 
   // ========= UPDATE =========
   function update(){
@@ -348,19 +375,18 @@
     state.monkey.x=clamp(state.monkey.x, state.monkey.w/2, canvas.width - state.monkey.w/2);
 
     if (state.frame % state.spawnEvery === 0) {
-  if (Math.random() < CONFIG.PAIR_CHANCE) {
-    spawnPair(); // gold/rotten 페어 그대로 사용
-  } else {
-    // 일반(normal) 제거: gold 또는 rotten만 단독 스폰
-    const kind = (Math.random() < (CONFIG.ROTTEN_CHANCE / (CONFIG.ROTTEN_CHANCE + CONFIG.GOLDEN_CHANCE)))
-      ? 'rotten'
-      : 'gold';
-    spawnOne(kind);
-  }
-}
+      if (Math.random() < CONFIG.PAIR_CHANCE) {
+        spawnPair(); // gold/rotten 페어
+      } else {
+        // normal 제거: gold 또는 rotten만 단독 스폰
+        const total = CONFIG.GOLDEN_CHANCE + CONFIG.ROTTEN_CHANCE || 1;
+        const kind = (Math.random() < (CONFIG.ROTTEN_CHANCE / total)) ? 'rotten' : 'gold';
+        spawnOne(kind);
+      }
+    }
 
-
-    state.timeBananaFrames--; if(state.timeBananaFrames<=0){ spawnTimeBanana(); resetTimeBananaTimer(); }
+    state.timeBananaFrames--;
+    if(state.timeBananaFrames<=0){ spawnTimeBanana(); resetTimeBananaTimer(); }
 
     for(let i=state.bananas.length-1;i>=0;i--){
       const b=state.bananas[i];
@@ -464,7 +490,15 @@
   }
   function roundedRect(x,y,w,h,r,fill){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); if(fill) ctx.fill(); else ctx.stroke() }
   function drawMonkey(cx,cy,w,h){ if(state.assets.monkey){ ctx.drawImage(state.assets.monkey,cx-w/2,cy-h/2,w,h) } else { ctx.save(); ctx.translate(cx,cy); ctx.fillStyle='#6b4f2a'; roundedRect(-w/2,-h/2,w,h,20,true); ctx.fillStyle='#f7d9b1'; roundedRect(-w/2+12,-h/2+14,w-24,h-28,16,true); ctx.fillStyle='#1b1b1b'; ctx.beginPath(); ctx.arc(-14,-8,6,0,Math.PI*2); ctx.arc(14,-8,6,0,Math.PI*2); ctx.fill(); ctx.restore() } }
-  function drawBanana(b){ if(b.kind==='gold'&&state.assets.gold){ ctx.drawImage(state.assets.gold,b.x-b.w/2,b.y-b.h/2,b.w,b.h) } else if(b.kind==='rotten'&&state.assets.rotten){ ctx.drawImage(state.assets.rotten,b.x-b.w/2,b.y-b.h/2,b.w,b.h) } else if(b.kind==='time'&&state.assets.time){ ctx.drawImage(state.assets.time,b.x-b.w/2,b.y-b.h/2,b.w,b.h) } else if(state.assets.banana){ ctx.drawImage(state.assets.banana,b.x-b.w/2,b.y-b.h/2,b.w,b.h) }}
+  function drawBanana(b){
+    if(b.kind==='gold'   && state.assets.gold)   { ctx.drawImage(state.assets.gold,   b.x-b.w/2,b.y-b.h/2,b.w,b.h); return; }
+    if(b.kind==='rotten' && state.assets.rotten) { ctx.drawImage(state.assets.rotten, b.x-b.w/2,b.y-b.h/2,b.w,b.h); return; }
+    if(b.kind==='time'   && state.assets.time)   { ctx.drawImage(state.assets.time,   b.x-b.w/2,b.y-b.h/2,b.w,b.h); return; }
+    // fallback (이미지 없을 때)
+    ctx.save(); ctx.translate(b.x,b.y);
+    ctx.fillStyle = (b.kind==='rotten')? '#7a5a3a' : (b.kind==='gold'? '#ffd84d' : '#7ad1ff');
+    ctx.beginPath(); ctx.ellipse(0,0,b.w*0.55,b.h*0.35,-0.6,0,Math.PI*2); ctx.fill(); ctx.restore();
+  }
   function drawBubble(x,y,text){
     ctx.save(); ctx.translate(x,y);
     const pad=8; ctx.font = fnt(600, 14);
@@ -477,30 +511,19 @@
   // ===== 스크롤/줌 완전 잠금 =====
   (function lockPageScroll(){
     const prevent = e => { e.preventDefault(); };
-
-    // 터치/휠 스크롤 차단
     window.addEventListener('touchmove', prevent, {passive:false});
     window.addEventListener('wheel', prevent, {passive:false});
-
-    // iOS 핀치줌/더블탭줌 차단 (메타뷰포트 user-scalable=no 보완)
     document.addEventListener('gesturestart', prevent);
     document.addEventListener('dblclick', prevent);
-
-    // 키보드로 페이지가 스크롤되는 것 차단 (게임 키입력은 계속 수신)
     const blockKeys = new Set(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','PageUp','PageDown','Home','End']);
-    window.addEventListener('keydown', (e) => {
-      if (blockKeys.has(e.key)) e.preventDefault();
-    }, {passive:false});
+    window.addEventListener('keydown', (e) => { if (blockKeys.has(e.key)) e.preventDefault(); }, {passive:false});
   })();
 
   // ========= BOOT =========
   async function boot(){
-    // 캔버스 폰트 적용 대기
     await document.fonts.ready;
-
-    const [monkey,/banana/,gold,rotten,time,heart,logo,bg]=await Promise.all([
+    const [monkey,gold,rotten,time,heart,logo,bg]=await Promise.all([
       loadImage(asset('monkey.png')),
-      //loadImage(asset('banana.png')),
       loadImage(asset('banana_gold.png')),
       loadImage(asset('banana_rotten.png')),
       loadImage(asset('banana_time.png')),
@@ -508,8 +531,8 @@
       loadImage(asset('logo.png')),
       loadImage(asset('background.png')),
     ]);
-    state.assets={monkey,/banana/,gold,rotten,time,heart,logo,bg};
-    fitCanvas(); // 최초 맞춤
+    state.assets={monkey,gold,rotten,time,heart,logo,bg};
+    fitCanvas();
     draw();
     document.getElementById('best').textContent=localStorage.getItem('bestScore')||0;
   }
