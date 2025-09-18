@@ -347,16 +347,18 @@
     if(keys.has('ArrowRight')||keys.has('d')) state.monkey.x+=CONFIG.MONKEY_SPEED;
     state.monkey.x=clamp(state.monkey.x, state.monkey.w/2, canvas.width - state.monkey.w/2);
 
-    if(state.frame%state.spawnEvery===0){
-      if(Math.random() < CONFIG.PAIR_CHANCE){ spawnPair(); }
-      else {
-        const r=Math.random(); let kind='normal';
-        if(r<CONFIG.ROTTEN_CHANCE) kind='rotten';
-        else if(r<CONFIG.ROTTEN_CHANCE+CONFIG.GOLDEN_CHANCE) kind='gold';
-        spawnOne(kind);
-        if((kind==='gold'||kind==='rotten') && Math.random()<0.25){ spawnPair(); }
-      }
-    }
+    if (state.frame % state.spawnEvery === 0) {
+  if (Math.random() < CONFIG.PAIR_CHANCE) {
+    spawnPair(); // gold/rotten 페어 그대로 사용
+  } else {
+    // 일반(normal) 제거: gold 또는 rotten만 단독 스폰
+    const kind = (Math.random() < (CONFIG.ROTTEN_CHANCE / (CONFIG.ROTTEN_CHANCE + CONFIG.GOLDEN_CHANCE)))
+      ? 'rotten'
+      : 'gold';
+    spawnOne(kind);
+  }
+}
+
 
     state.timeBananaFrames--; if(state.timeBananaFrames<=0){ spawnTimeBanana(); resetTimeBananaTimer(); }
 
@@ -496,9 +498,9 @@
     // 캔버스 폰트 적용 대기
     await document.fonts.ready;
 
-    const [monkey,banana,gold,rotten,time,heart,logo,bg]=await Promise.all([
+    const [monkey,/banana/,gold,rotten,time,heart,logo,bg]=await Promise.all([
       loadImage(asset('monkey.png')),
-      loadImage(asset('banana.png')),
+      //loadImage(asset('banana.png')),
       loadImage(asset('banana_gold.png')),
       loadImage(asset('banana_rotten.png')),
       loadImage(asset('banana_time.png')),
@@ -506,7 +508,7 @@
       loadImage(asset('logo.png')),
       loadImage(asset('background.png')),
     ]);
-    state.assets={monkey,banana,gold,rotten,time,heart,logo,bg};
+    state.assets={monkey,/banana/,gold,rotten,time,heart,logo,bg};
     fitCanvas(); // 최초 맞춤
     draw();
     document.getElementById('best').textContent=localStorage.getItem('bestScore')||0;
