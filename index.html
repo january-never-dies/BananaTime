@@ -508,30 +508,25 @@
     ctx.fillText(text,0,6); ctx.restore()
   }
   function roundedRect(x,y,w,h,r,fill){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); if(fill) ctx.fill(); else ctx.stroke() }
-  function drawMonkey(cx,cy,w,h){
-  // 원숭이 본체 그리기 (에셋 있으면 이미지, 없으면 도형)
-  if(state.assets.monkey){
+  function drawMonkey(cx, cy, w, h){
+  // ▼ monkeyFlash > 0 이고 대체 스프라이트가 있으면 'hurt'로 그림
+  if (state.monkeyFlash > 0 && state.assets.monkeyHurt) {
+    ctx.drawImage(state.assets.monkeyHurt, cx - w/2, cy - h/2, w, h);
+    return;
+  }
+
+  // 평상시 스프라이트
+  if (state.assets.monkey) {
     ctx.drawImage(state.assets.monkey, cx - w/2, cy - h/2, w, h);
   } else {
+    // 기존 fallback 도형
     ctx.save(); ctx.translate(cx,cy);
     ctx.fillStyle='#6b4f2a'; roundedRect(-w/2,-h/2,w,h,20,true);
     ctx.fillStyle='#f7d9b1'; roundedRect(-w/2+12,-h/2+14,w-24,h-28,16,true);
     ctx.fillStyle='#1b1b1b'; ctx.beginPath(); ctx.arc(-14,-8,6,0,Math.PI*2); ctx.arc(14,-8,6,0,Math.PI*2); ctx.fill();
     ctx.restore();
   }
-
-  // ▼ 맞았을 때 빨간색 오버레이 (짧게 깜빡이는 효과)
-  if (state.monkeyFlash > 0) {
-    ctx.save();
-    // 이미지/도형 위에만 색이 입혀지도록
-    ctx.globalCompositeOperation = 'source-atop';
-    // 투명도는 취향대로 0.35~0.55 사이 조절 가능
-    ctx.fillStyle = 'rgba(255, 30, 30, 0.45)';
-    ctx.fillRect(cx - w/2, cy - h/2, w, h);
-    ctx.restore();
-  }
 }
-
   function drawBanana(b){
     if(b.kind==='gold'   && state.assets.gold)   { ctx.drawImage(state.assets.gold,   b.x-b.w/2,b.y-b.h/2,b.w,b.h); return; }
     if(b.kind==='rotten' && state.assets.rotten) { ctx.drawImage(state.assets.rotten, b.x-b.w/2,b.y-b.h/2,b.w,b.h); return; }
@@ -564,8 +559,9 @@
       loadImage(asset('banana_time.png')),
       loadImage(asset('logo.png')),
       loadImage(asset('background.png')),
+      loadImage(asset('monkey_hurt.png'))
     ]);
-    state.assets={monkey,gold,rotten,time,logo,bg};
+    state.assets={monkey,gold,rotten,time,logo,bg,monkeyhurt};
     fitCanvas();
     draw();
     document.getElementById('best').textContent=localStorage.getItem('bestScore')||0;
@@ -581,4 +577,3 @@
   </script>
 </body>
 </html>
-
