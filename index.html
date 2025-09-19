@@ -105,7 +105,7 @@
       position:absolute; inset:8px 10px auto 10px;
       display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:8px;
       font-weight:900; font-size:14px; text-shadow:0 2px 6px rgba(0,0,0,.25);
-      color:#1a1a1a; z-index:10; pointer-events:none;
+      color:#fff; z-index:10; pointer-events:none;
       font-family: var(--font);
     }
     .hud .left{justify-self:start}
@@ -119,11 +119,19 @@
     #shareBtn{ order:3; }
 
     button.btn, a.btn{
-      appearance:none;border:none;background:var(--brand);color:#1b1b1b;font-weight:800;
-      padding:10px 14px;border-radius:12px;cursor:pointer;
-      box-shadow:0 6px 16px rgba(0,0,0,.15);text-decoration:none;display:inline-block;
-      font-family: var(--font); letter-spacing:.5px
-    }
+  appearance:none; border:none; background:var(--brand); color:#1b1b1b; font-weight:800;
+  padding:10px 14px; border-radius:12px; cursor:pointer;
+  box-shadow:0 6px 16px rgba(0,0,0,.15); text-decoration:none;
+  font-family: var(--font); letter-spacing:.5px;
+
+  /* ▼ 통일 포인트 */
+  font-size:14px;           /* 글자 크기 고정 */
+  line-height:1;            /* 브라우저 기본 차이 제거 */
+  display:inline-flex;      /* 버튼/링크 모두 동일한 레이아웃 */
+  align-items:center;
+  justify-content:center;
+  min-height:38px;          /* 세 버튼 높이 동일화 */
+}
     button.btn:active{transform:translateY(1px)}
     .hidden{display:none!important}
 
