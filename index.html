@@ -270,7 +270,8 @@
     // ▼ 원숭이 픽셀 크기 56×56
     monkey:{x:180,y:568,w:56,h:56},
     bananas:[],
-    assets:{monkey:null,gold:null,rotten:null,time:null,logo:null,bg:null},
+    // ▼ monkeyHurt 키 포함 (표정 전환용)
+    assets:{monkey:null, monkeyHurt:null, gold:null, rotten:null, time:null, logo:null, bg:null},
     lastTick:0, spawnEvery:CONFIG.BASE_SPAWN, rafId:null, timeAcc:0,
     timeBananaFrames: 0,
     bubble:{text:'',frames:0},
@@ -421,7 +422,7 @@
         state.bananas.splice(i,1);
         if(b.kind==='rotten'){
           state.lives = Math.max(0, state.lives - 1); document.getElementById('lives').textContent = state.lives;
-          state.shake = CONFIG.SHAKE_FRAMES; state.monkeyFlash = CONFIG.MONKEY_FLASH;
+          state.shake = CONFIG.SHAKE_FRAMES; state.monkeyFlash = CONFIG.MONKEY_FLASH; // ← hurt 표시 트리거
           addFloater(b.x, b.y, 'Oops.', 30);
         } else if(b.kind==='time'){
           state.timeLeft = Math.min(state.timeLeft + CONFIG.TIMEBANANA_ADD_S, CONFIG.GAME_SECONDS + 10);
@@ -483,10 +484,10 @@
     } else {
       document.getElementById('best').textContent = best;
     }
-    // ▼ 엔딩 시 버튼들만 보여주고, 시작 오버레이는 다시 띄우지 않음
+    // 엔딩 시 버튼들만 노출
     document.getElementById('shareBtn').classList.remove('hidden');
     document.getElementById('buyBtn').classList.remove('hidden');
-    // ui.startOverlay.classList.remove('hidden');  // ← 제거
+    // 시작 오버레이는 다시 띄우지 않음
   }
 
   // ========= DRAW HELPERS =========
@@ -508,25 +509,24 @@
     ctx.fillText(text,0,6); ctx.restore()
   }
   function roundedRect(x,y,w,h,r,fill){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); if(fill) ctx.fill(); else ctx.stroke() }
+
+  // ▼ 표정 전환 로직 포함
   function drawMonkey(cx, cy, w, h){
-  // ▼ monkeyFlash > 0 이고 대체 스프라이트가 있으면 'hurt'로 그림
-  if (state.monkeyFlash > 0 && state.assets.monkeyHurt) {
-    ctx.drawImage(state.assets.monkeyHurt, cx - w/2, cy - h/2, w, h);
-    return;
+    if (state.monkeyFlash > 0 && state.assets.monkeyHurt) {
+      ctx.drawImage(state.assets.monkeyHurt, cx - w/2, cy - h/2, w, h);
+      return;
+    }
+    if(state.assets.monkey){
+      ctx.drawImage(state.assets.monkey, cx - w/2, cy - h/2, w, h);
+    } else {
+      ctx.save(); ctx.translate(cx,cy);
+      ctx.fillStyle='#6b4f2a'; roundedRect(-w/2,-h/2,w,h,20,true);
+      ctx.fillStyle='#f7d9b1'; roundedRect(-w/2+12,-h/2+14,w-24,h-28,16,true);
+      ctx.fillStyle='#1b1b1b'; ctx.beginPath(); ctx.arc(-14,-8,6,0,Math.PI*2); ctx.arc(14,-8,6,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+    }
   }
 
-  // 평상시 스프라이트
-  if (state.assets.monkey) {
-    ctx.drawImage(state.assets.monkey, cx - w/2, cy - h/2, w, h);
-  } else {
-    // 기존 fallback 도형
-    ctx.save(); ctx.translate(cx,cy);
-    ctx.fillStyle='#6b4f2a'; roundedRect(-w/2,-h/2,w,h,20,true);
-    ctx.fillStyle='#f7d9b1'; roundedRect(-w/2+12,-h/2+14,w-24,h-28,16,true);
-    ctx.fillStyle='#1b1b1b'; ctx.beginPath(); ctx.arc(-14,-8,6,0,Math.PI*2); ctx.arc(14,-8,6,0,Math.PI*2); ctx.fill();
-    ctx.restore();
-  }
-}
   function drawBanana(b){
     if(b.kind==='gold'   && state.assets.gold)   { ctx.drawImage(state.assets.gold,   b.x-b.w/2,b.y-b.h/2,b.w,b.h); return; }
     if(b.kind==='rotten' && state.assets.rotten) { ctx.drawImage(state.assets.rotten, b.x-b.w/2,b.y-b.h/2,b.w,b.h); return; }
@@ -552,7 +552,7 @@
   // ========= BOOT =========
   async function boot(){
     await document.fonts.ready;
-    const [monkey,gold,rotten,time,logo,bg]=await Promise.all([
+    const [monkey, gold, rotten, time, logo, bg, monkeyHurt] = await Promise.all([
       loadImage(asset('monkey.png')),
       loadImage(asset('banana_gold.png')),
       loadImage(asset('banana_rotten.png')),
@@ -561,7 +561,9 @@
       loadImage(asset('background.png')),
       loadImage(asset('monkey_hurt.png'))
     ]);
-    state.assets={monkey,gold,rotten,time,logo,bg,monkeyhurt};
+    // ▼ 올바른 키로 저장
+    state.assets = { monkey, monkeyHurt, gold, rotten, time, logo, bg };
+
     fitCanvas();
     draw();
     document.getElementById('best').textContent=localStorage.getItem('bestScore')||0;
