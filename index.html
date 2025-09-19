@@ -267,7 +267,7 @@
   function share(){
     const url = location.href;
     const title = `${CONFIG.TITLE_TEXT} — SCORE ${state.score}`;
-    const text  = `#떠숭이밥주기 떠숭이와 ${state.score}점을 획득했어요! 🍌`;
+    const text  = `#떠숭이_밥주기🍌 ${state.score}점을 획득했어요!`;
 
     if (navigator.share) {
       navigator.share({ title, text, url }).catch(()=>{});
@@ -307,7 +307,7 @@
     ui.startOverlay.classList.add('hidden');
 
     state.monkey.x = canvas.width/2;
-    state.monkey.y = canvas.height - 72;
+    state.monkey.y = canvas.height - 70;
 
     resetTimeBananaTimer();
     canvas.onclick = null;
