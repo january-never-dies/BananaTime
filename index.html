@@ -65,7 +65,7 @@
       border:2px dashed rgba(0,0,0,.25);
       border-radius:10px;
       background:rgba(255,255,255,.28);
-      backdrop-filter:saturate(120%) blur(2px);
+      backdrop-filter:saturate(100%) blur(2px);
       color:#6b6b6b; font-weight:800; font-size:12px;
       user-select:none;
       min-width: 170px;
@@ -249,7 +249,7 @@
   const state={
     running:false, frame:0, score:0, timeLeft:CONFIG.GAME_SECONDS,
     lives:3, shake:0, monkeyFlash:0,
-    monkey:{x:180,y:560,w:88,h:88}, bananas:[],
+    monkey:{x:180,y:560,w:50,h:50}, bananas:[],
     assets:{monkey:null,gold:null,rotten:null,time:null,logo:null,bg:null},
     lastTick:0, spawnEvery:CONFIG.BASE_SPAWN, rafId:null, timeAcc:0,
     timeBananaFrames: 0,
