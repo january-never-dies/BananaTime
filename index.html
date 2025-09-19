@@ -142,8 +142,8 @@
 
       <div class="start-overlay" id="startOverlay" role="dialog" aria-modal="true">
         <div class="start-box">
-          <div class="start-title">Banana Time — 떠숭이랑 함께!</div>
-          <div class="start-sub">탭/드래그 또는 ← → 로 이동</div>
+          <div class="start-title">Banana Time!</div>
+          <div class="start-sub">드래그하여 이동</div>
           <div class="start-help">골든 바나나(+5) · 썩은 바나나(❤️-1) · 시간 바나나(⏱ +2s)</div>
         </div>
       </div>
@@ -156,11 +156,11 @@
     </div>
 
     <div class="footer">
-      Twitter(@ddeosungee)
+      X(@ddeosungee)
       <span class="sep">·</span>
       <a class="copyright" href="neodgm-LICENSE.txt" target="_blank" rel="noopener">
         Copyright © 2017-2024, Eunbin Jeong (Dalgona.) &lt;project-neodgm@dalgona.dev&gt;
-        with reserved font name "Neo둥근모" and "NeoDunggeunmo".
+        with reserved font name "NeoDunggeunmo" and "NeoDunggeunmo".
       </a>
     </div>
   </div>
@@ -194,14 +194,13 @@
   };
 
   // ========= UTIL =========
-  // 현재 문서 기준으로 자산 경로 계산 (Pages/서브폴더/로컬 모두 대응)
   const ASSET_BASE = new URL('./', location.href);
   const asset = (name) => new URL(name, ASSET_BASE).toString();
 
   function loadImage(src){
     return new Promise((resolve) => {
       const img = new Image();
-      img.crossOrigin = 'anonymous'; // 다른 호스트에서도 안전하게
+      img.crossOrigin = 'anonymous';
       img.onload = () => resolve(img);
       img.onerror = (e) => { console.error('[ImageLoadFail]', src, e?.message || e); resolve(null); };
       img.src = src;
@@ -249,7 +248,9 @@
   const state={
     running:false, frame:0, score:0, timeLeft:CONFIG.GAME_SECONDS,
     lives:3, shake:0, monkeyFlash:0,
-    monkey:{x:180,y:560,w:50,h:50}, bananas:[],
+    // ▼ 변경: 원숭이 픽셀 크기 56×56
+    monkey:{x:180,y:560,w:56,h:56},
+    bananas:[],
     assets:{monkey:null,gold:null,rotten:null,time:null,logo:null,bg:null},
     lastTick:0, spawnEvery:CONFIG.BASE_SPAWN, rafId:null, timeAcc:0,
     timeBananaFrames: 0,
@@ -257,7 +258,7 @@
     floaters:[]
   };
 
-  // ========= SHARE HANDLER (추가) =========
+  // ========= SHARE HANDLER =========
   function share(){
     const url = location.href;
     const title = `${CONFIG.TITLE_TEXT} — SCORE ${state.score}`;
@@ -453,7 +454,7 @@
     const msg=`SCORE ${state.score}`;
     ctx.fillStyle='#fff'; ctx.font = fnt(700, 24);
     ctx.textAlign='center';
-    ctx.fillText('Banana Time 끝!',canvas.width/2,canvas.height/2-22);
+    ctx.fillText('Banana Time Over!',canvas.width/2,canvas.height/2-22);
     ctx.fillText(msg,canvas.width/2,canvas.height/2+10);
     const best=Number(localStorage.getItem('bestScore')||0);
     if(state.score > best) {
@@ -529,3 +530,4 @@
   </script>
 </body>
 </html>
+
