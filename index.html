@@ -109,14 +109,7 @@
     .hud .center{justify-self:center}
     .hud .right{justify-self:end}
 
-    .group{
-      display:flex;gap:10px;flex-wrap:wrap;justify-content:center
-    }
-    /* ▼ 버튼 중앙 정렬: buyBtn이 항상 가운데 오도록 순서 고정 */
-    #startBtn{ order:1; }
-    #buyBtn{ order:2; }   /* 가운데 */
-    #shareBtn{ order:3; }
-
+    .group{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
     button.btn, a.btn{
       appearance:none;border:none;background:var(--brand);color:#1b1b1b;font-weight:800;
       padding:10px 14px;border-radius:12px;cursor:pointer;
@@ -312,7 +305,7 @@
   // ========= GAME LOOP =========
   function startGame(){
     if(state.rafId){ cancelAnimationFrame(state.rafId); state.rafId = null; }
-    state.running=true; state.frame=0; state.score=0; state.timeLeft=CONFIG.GAME_SECONDS; state.lives=3; state.shake=0; state.monkeyFlash=0; state.bananas=[]; state.spawnEvery:CONFIG.BASE_SPAWN;
+    state.running=true; state.frame=0; state.score=0; state.timeLeft=CONFIG.GAME_SECONDS; state.lives=3; state.shake=0; state.monkeyFlash=0; state.bananas=[]; state.spawnEvery=CONFIG.BASE_SPAWN;
     state.timeAcc = 0;
 
     ui.score.textContent='0'; ui.time.textContent=CONFIG.GAME_SECONDS; ui.lives.textContent='3';
@@ -558,11 +551,11 @@
     const slot = document.getElementById('logoSlot');
     if (logo) {
       slot.classList.add('has-img');
+      // 캐시 문제 있으면 ?v=숫자 붙여도 OK
       slot.innerHTML = `<img class="logo" src="${asset('logo.png')}" alt="24/7 WITH DDEOSUNGEE">`;
     }
   }
   if(document.readyState!=='loading'){ boot(); } else { addEventListener('DOMContentLoaded', boot); }
   </script>
 </body>
-</html>
-
+</html> 
