@@ -185,7 +185,7 @@
     FALL_MIN: 2,
     FALL_MAX: 5,
     GOLDEN_CHANCE: 0.08,
-    ROTTEN_CHANCE: 0.05,
+    ROTTEN_CHANCE: 0.04,
     SHAKE_FRAMES: 18,
     MONKEY_FLASH: 14,
     DRIFT_VX_MAX: 1.6,
@@ -260,7 +260,7 @@
     running:false, frame:0, score:0, timeLeft:CONFIG.GAME_SECONDS,
     lives:3, shake:0, monkeyFlash:0,
     // ▼ 원숭이 픽셀 크기 56×56
-    monkey:{x:180,y:570,w:56,h:56},
+    monkey:{x:180,y:568,w:56,h:56},
     bananas:[],
     assets:{monkey:null,gold:null,rotten:null,time:null,logo:null,bg:null},
     lastTick:0, spawnEvery:CONFIG.BASE_SPAWN, rafId:null, timeAcc:0,
@@ -314,7 +314,7 @@
     ui.startOverlay.classList.add('hidden');
 
     state.monkey.x = canvas.width/2;
-    state.monkey.y = canvas.height - 70;
+    state.monkey.y = canvas.height - 72;
 
     resetTimeBananaTimer();
     canvas.onclick = null;
