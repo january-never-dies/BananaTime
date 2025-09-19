@@ -191,7 +191,7 @@
     </div>
   </div>
 
-  <!-- BGM: WAV 단일 src (Vercel의 public/에 bgm.wav 넣고 루트(/)로 참조) -->
+  <!-- BGM: WAV 단일 src -->
   <audio id="bgm" loop preload="auto" src="/bgm.wav"></audio>
 
   <script>
@@ -508,6 +508,12 @@
         state.bananas.splice(i,1);
       }
     }
+
+    /* ▼▼ 흔들림/플래시/버블 감쇠: 반드시 update()의 맨 끝에 유지 ▼▼ */
+    if (state.shake > 0) state.shake--;
+    if (state.monkeyFlash > 0) state.monkeyFlash--;
+    if (state.bubble.frames > 0) state.bubble.frames--;
+    /* ▲▲ 감쇠 끝 ▲▲ */
   }
 
   // ========= DRAW =========
