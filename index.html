@@ -165,7 +165,7 @@
       <span class="sep">·</span>
       <a class="copyright" href="neodgm-LICENSE.txt" target="_blank" rel="noopener">
         Copyright © 2017-2024, Eunbin Jeong (Dalgona.) &lt;project-neodgm@dalgona.dev&gt;
-        with reserved font name "NeoDunggeunmo" and "NeoDunggeunmo".
+        with reserved font name "Neo둥근모" and "NeoDunggeunmo".
       </a>
     </div>
   </div>
@@ -263,20 +263,39 @@
     floaters:[]
   };
 
-  // ========= SHARE HANDLER =========
+  // ========= SHARE HANDLER (줄바꿈 3줄 고정 + 트위터 인텐트 지원) =========
   function share(){
-    const url = location.href;
+    const url   = location.href; // https://... 절대경로
     const title = `${CONFIG.TITLE_TEXT} — SCORE ${state.score}`;
-    const text  = `#떠숭이_밥주기🍌 ${state.score}점을 획득했어요!`;
+
+    // 1) 해시태그, 2) 점수 문장 → text에만 담고
+    // 3) 링크는 Web Share API의 url 필드로 분리 (대부분 앱에서 마지막 줄로 자동 배치)
+    const lines = [
+      '#떠숭이_밥주기🍌',
+      `${state.score}점을 획득했어요!`
+    ];
+    const text = lines.join('\n'); // 코드에서 줄바꿈 처리
 
     if (navigator.share) {
       navigator.share({ title, text, url }).catch(()=>{});
-    } else {
+      return;
+    }
+
+    // Web Share API 미지원 → 트위터 인텐트로 열기 (줄바꿈 %0A로 유지)
+    const twIntent = 'https://twitter.com/intent/tweet?text='
+      + encodeURIComponent(text)
+      + '&url=' + encodeURIComponent(url);
+
+    const win = window.open(twIntent, '_blank', 'noopener');
+
+    // 팝업 차단 등 실패 시: 3줄+링크를 한 번에 복사
+    if (!win) {
+      const fallback = `${lines.join('\n')}\n${url}`;
       try {
-        navigator.clipboard?.writeText(url);
-        alert('링크가 복사되었습니다:\n' + url);
+        navigator.clipboard?.writeText(fallback);
+        alert('공유 문구와 링크를 복사했어요:\n\n' + fallback);
       } catch {
-        prompt('아래 링크를 복사해 주세요:', url);
+        prompt('아래 내용을 복사해 주세요:', fallback);
       }
     }
   }
@@ -567,4 +586,3 @@
   </script>
 </body>
 </html>
-
