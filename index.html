@@ -12,7 +12,7 @@
       NeoDunggeunmo (Neo둥근모)
       Copyright © 2017-2024, Eunbin Jeong (Dalgona.) <project-neodgm@dalgona.dev>
       with reserved font name "Neo둥근모" and "NeoDunggeunmo".
-      이 게임은 해당 글꼴의 라이선스 전문을 포함합니다.
+      이 앱/게임은 해당 글꼴의 라이선스 전문을 포함합니다.
       전문은 neodgm-LICENSE.txt에서 확인할 수 있습니다.
     ============================================================================ */
     @font-face{
@@ -109,7 +109,14 @@
     .hud .center{justify-self:center}
     .hud .right{justify-self:end}
 
-    .group{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+    .group{
+      display:flex;gap:10px;flex-wrap:wrap;justify-content:center
+    }
+    /* ▼ 버튼 중앙 정렬: buyBtn이 항상 가운데 오도록 순서 고정 */
+    #startBtn{ order:1; }
+    #buyBtn{ order:2; }   /* 가운데 */
+    #shareBtn{ order:3; }
+
     button.btn, a.btn{
       appearance:none;border:none;background:var(--brand);color:#1b1b1b;font-weight:800;
       padding:10px 14px;border-radius:12px;cursor:pointer;
@@ -163,7 +170,7 @@
     <div class="group">
       <button class="btn" id="startBtn">떠숭이 밥주기</button>
       <button class="btn hidden" id="shareBtn">공유하기</button>
-      <a class="btn hidden" id="buyBtn" href="#" target="_blank" rel="noopener" aria-label="떠숭이 인형 구매하기">떠숭이 인형 구매하기</a>
+      <a class="btn hidden" id="buyBtn" href="#" target="_blank" rel="noopener" aria-label="TO GET DDEO">TO GET DDEO</a>
     </div>
 
     <div class="footer">
@@ -185,7 +192,7 @@
     FALL_MIN: 2,
     FALL_MAX: 5,
     GOLDEN_CHANCE: 0.08,
-    ROTTEN_CHANCE: 0.03,
+    ROTTEN_CHANCE: 0.05,
     SHAKE_FRAMES: 18,
     MONKEY_FLASH: 14,
     DRIFT_VX_MAX: 1.6,
@@ -305,7 +312,7 @@
   // ========= GAME LOOP =========
   function startGame(){
     if(state.rafId){ cancelAnimationFrame(state.rafId); state.rafId = null; }
-    state.running=true; state.frame=0; state.score=0; state.timeLeft=CONFIG.GAME_SECONDS; state.lives=3; state.shake=0; state.monkeyFlash=0; state.bananas=[]; state.spawnEvery=CONFIG.BASE_SPAWN;
+    state.running=true; state.frame=0; state.score=0; state.timeLeft=CONFIG.GAME_SECONDS; state.lives=3; state.shake=0; state.monkeyFlash=0; state.bananas=[]; state.spawnEvery:CONFIG.BASE_SPAWN;
     state.timeAcc = 0;
 
     ui.score.textContent='0'; ui.time.textContent=CONFIG.GAME_SECONDS; ui.lives.textContent='3';
@@ -551,7 +558,6 @@
     const slot = document.getElementById('logoSlot');
     if (logo) {
       slot.classList.add('has-img');
-      // 캐시 문제 있으면 ?v=숫자 붙여도 OK
       slot.innerHTML = `<img class="logo" src="${asset('logo.png')}" alt="24/7 WITH DDEOSUNGEE">`;
     }
   }
@@ -559,4 +565,3 @@
   </script>
 </body>
 </html>
-
