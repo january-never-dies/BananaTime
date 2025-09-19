@@ -294,7 +294,7 @@
   function share(){
     const url = location.href;
     const title = `${CONFIG.TITLE_TEXT} — SCORE ${state.score}`;
-    const text  = `#BananaTime 떠숭이와 ${state.score}점을 획득했어요! 🍌`;
+    const text  = `#떠숭이밥주기 떠숭이와 ${state.score}점을 획득했어요! 🍌`;
 
     if (navigator.share) {
       navigator.share({ title, text, url }).catch(()=>{});
