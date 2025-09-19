@@ -265,40 +265,38 @@
 
   // ========= SHARE HANDLER (줄바꿈 3줄 고정 + 트위터 인텐트 지원) =========
   function share(){
-    const url   = location.href; // https://... 절대경로
-    const title = `${CONFIG.TITLE_TEXT} — SCORE ${state.score}`;
+  const link  = location.href;
+  const title = `${CONFIG.TITLE_TEXT} — SCORE ${state.score}`;
 
-    // 1) 해시태그, 2) 점수 문장 → text에만 담고
-    // 3) 링크는 Web Share API의 url 필드로 분리 (대부분 앱에서 마지막 줄로 자동 배치)
-    const lines = [
-      '#떠숭이_밥주기🍌',
-      `${state.score}점을 획득했어요!`
-    ];
-    const text = lines.join('\n'); // 코드에서 줄바꿈 처리
+  // 해시태그 / 점수문장 / (빈줄+ZWS) / 링크  → 완전히 분리
+  const lines = [
+    '#떠숭이_밥주기🍌',
+    `${state.score}점을 획득했어요🐒`,
+    '\u200B',            // 일부 앱이 연속 개행을 뭉개는 걸 방지하는 완충 줄
+    link
+  ];
+  const body = lines.join('\n');
 
-    if (navigator.share) {
-      navigator.share({ title, text, url }).catch(()=>{});
-      return;
-    }
+  if (navigator.share) {
+    // url 필드 안 넘김! → 일부 환경에서 이어붙는 문제 차단
+    navigator.share({ title, text: body }).catch(()=>{});
+    return;
+  }
 
-    // Web Share API 미지원 → 트위터 인텐트로 열기 (줄바꿈 %0A로 유지)
-    const twIntent = 'https://twitter.com/intent/tweet?text='
-      + encodeURIComponent(text)
-      + '&url=' + encodeURIComponent(url);
+  // 트위터도 text 안에 링크를 직접 넣어 한 줄 아래로 분리
+  const twIntent = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(body);
+  const win = window.open(twIntent, '_blank', 'noopener');
 
-    const win = window.open(twIntent, '_blank', 'noopener');
-
-    // 팝업 차단 등 실패 시: 3줄+링크를 한 번에 복사
-    if (!win) {
-      const fallback = `${lines.join('\n')}\n${url}`;
-      try {
-        navigator.clipboard?.writeText(fallback);
-        alert('공유 문구와 링크를 복사했어요:\n\n' + fallback);
-      } catch {
-        prompt('아래 내용을 복사해 주세요:', fallback);
-      }
+  if (!win) {
+    try {
+      navigator.clipboard?.writeText(body);
+      alert('공유 문구를 복사했어요:\n\n' + body);
+    } catch {
+      prompt('아래 내용을 복사해 주세요:', body);
     }
   }
+}
+
 
   // ========= INPUT =========
   const keys=new Set(); addEventListener('keydown',e=>keys.add(e.key)); addEventListener('keyup',e=>keys.delete(e.key));
