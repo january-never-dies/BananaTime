@@ -34,6 +34,9 @@
 
       --wrap-pad: 12px;
       --wrap-pad-top-extra: 4px;
+
+      /* ▼ 음소거 버튼 총 높이(글자+패딩) 추정값 — 살짝 조정 가능 (26~30px 권장) */
+      --audio-btn-h: 28px;
     }
 
     html,body{
@@ -72,11 +75,27 @@
       font-family: var(--font);
     }
     .logo-fixed img.logo{height:var(--logo-height); width:auto; display:block}
-
-    .logo-fixed.has-img{
-      border:0; background:transparent; padding:0; min-width:auto; box-shadow:none; backdrop-filter:none;
-    }
+    .logo-fixed.has-img{ border:0; background:transparent; padding:0; min-width:auto; box-shadow:none; backdrop-filter:none; }
     .logo-fixed.has-img img.logo{display:block; height:var(--logo-height); width:auto; filter:none;}
+
+    /* ▼ 인게임 밖, 우측 상단 오디오 토글 — 버튼 하단 = 로고 하단 정렬 */
+    .audio-fixed{
+      position: fixed;
+      top:  calc(
+              max(var(--wrap-pad), env(safe-area-inset-top))
+              + var(--logo-height)
+              - var(--audio-btn-h)
+            );
+      right: calc(max(var(--wrap-pad), env(safe-area-inset-right)));
+      z-index: 40; /* 로고(30)보다 위 */
+      display: inline-grid;
+      place-items: center;
+    }
+    .audio-btn{
+      appearance:none; border:0; background:rgba(0,0,0,.35); color:#fff; font-weight:900;
+      padding:6px 10px; border-radius:10px; cursor:pointer; font-size:12px; line-height:1;
+      box-shadow:0 2px 6px rgba(0,0,0,.2);
+    }
 
     #stage{
       position:relative;
@@ -125,12 +144,16 @@
     .start-box{ background:rgba(0,0,0,.35); border-radius:12px; padding:16px 18px; max-width:min(90%,520px) }
     .start-title{font:900 22px var(--font); margin-bottom:8px}
     .start-sub{font:800 18px var(--font); margin-bottom:8px}
-    /* ▼ 안내 문구: 시간 바나나 +3s로 갱신 */
     .start-help{font:600 14px var(--font); opacity:.95; line-height:1.5}
   </style>
 </head>
 <body>
   <div class="logo-fixed" id="logoSlot">LOGO PNG</div>
+
+  <!-- ▼ 인게임 밖, 우측 상단 오디오 토글 -->
+  <div class="audio-fixed">
+    <button id="audioBtn" class="audio-btn" aria-label="BGM 토글">🔇</button>
+  </div>
 
   <div class="wrap">
     <div id="stage" aria-label="WITH Monkey Game Stage">
@@ -170,6 +193,12 @@
     </div>
   </div>
 
+  <!-- ▼ BGM만: mp3 우선, 없으면 wav 사용 (bgm.wav만 있어도 OK) -->
+  <audio id="bgm" loop preload="auto">
+    <source src="bgm.mp3" type="audio/mpeg" />
+    <source src="bgm.wav" type="audio/wav" />
+  </audio>
+
   <script>
   // ========= CONFIG =========
   const CONFIG = {
@@ -190,10 +219,8 @@
     DRIFT_FREQ_MAX: 0.10,
     PAIR_CHANCE: 0.28,
     PAIR_SPACING: 42,
-    PAIR_VX_PUSH: 0.35,
     TIMEBANANA_PERIOD_S: 4,
     TIMEBANANA_JITTER_S: 2,
-    /* ▼ 시간 바나나 +3s */
     TIMEBANANA_ADD_S: 3,
     SHOP_URL: "https://example.com/plush",
     TITLE_TEXT: "Banana Time"
@@ -230,12 +257,44 @@
     score:document.getElementById('score'), time:document.getElementById('time'), best:document.getElementById('best'),
     lives:document.getElementById('lives'), startBtn:document.getElementById('startBtn'),
     shareBtn:document.getElementById('shareBtn'), buyBtn:document.getElementById('buyBtn'),
-    startOverlay:document.getElementById('startOverlay')
+    startOverlay:document.getElementById('startOverlay'),
+    audioBtn:document.getElementById('audioBtn')
   };
 
   const FONT_NAME = 'NeoDunggeunmo, Apple SD Gothic Neo, Noto Sans KR, system-ui, sans-serif';
   const f = (w, px) => `${w} ${px}px ${FONT_NAME}`;
   const fnt = (weight, size) => f(weight, size);
+
+  // ========= BGM ONLY =========
+  const bgmEl = document.getElementById('bgm');
+  let bgmEnabled = true;
+  let bgmVolume = 0.7; // 초기 볼륨(0~1)
+
+  function refreshAudioButton(){
+    ui.audioBtn.textContent = bgmEnabled ? '🔊' : '🔇';
+    ui.audioBtn.setAttribute('aria-label', bgmEnabled ? 'BGM 끄기' : 'BGM 켜기');
+  }
+  function playBGM(reset){
+    if(!bgmEnabled) return;
+    try{
+      if(reset) bgmEl.currentTime = 0;
+      bgmEl.volume = bgmVolume;
+      bgmEl.play().catch(()=>{ /* iOS에서 제스처 전 play 실패시 무시 */ });
+    }catch{}
+  }
+  function pauseBGM(){
+    try{ bgmEl.pause(); }catch{}
+  }
+  function setMuted(muted){
+    bgmEnabled = !muted;
+    if(muted) pauseBGM(); else playBGM(false);
+    refreshAudioButton();
+  }
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.visibilityState === 'visible' && bgmEnabled){
+      playBGM(false);
+    }
+  });
 
   // ========= RESPONSIVE CANVAS =========
   function fitCanvas(){
@@ -263,40 +322,29 @@
     floaters:[]
   };
 
-  // ========= SHARE HANDLER (줄바꿈 3줄 고정 + 트위터 인텐트 지원) =========
+  // ========= SHARE HANDLER =========
   function share(){
-  const link  = location.href;
-  const title = `${CONFIG.TITLE_TEXT} — SCORE ${state.score}`;
+    const link  = location.href;
+    const title = `${CONFIG.TITLE_TEXT} — SCORE ${state.score}`;
+    const lines = [
+      '#떠숭이_밥주기⛧',
+      `⊂(${state.score}점을 획득했어요)⊃Ⳋ`,
+      '\u200B',
+      link
+    ];
+    const body = lines.join('\n');
 
-  // 해시태그 / 점수문장 / (빈줄+ZWS) / 링크  → 완전히 분리
-  const lines = [
-    '#떠숭이_밥주기⛧',
-    `⊂(${state.score}점을 획득했어요)⊃Ⳋ`,
-    '\u200B',            // 일부 앱이 연속 개행을 뭉개는 걸 방지하는 완충 줄
-    link
-  ];
-  const body = lines.join('\n');
-
-  if (navigator.share) {
-    // url 필드 안 넘김! → 일부 환경에서 이어붙는 문제 차단
-    navigator.share({ title, text: body }).catch(()=>{});
-    return;
-  }
-
-  // 트위터도 text 안에 링크를 직접 넣어 한 줄 아래로 분리
-  const twIntent = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(body);
-  const win = window.open(twIntent, '_blank', 'noopener');
-
-  if (!win) {
-    try {
-      navigator.clipboard?.writeText(body);
-      alert('공유 문구를 복사했어요:\n\n' + body);
-    } catch {
-      prompt('아래 내용을 복사해 주세요:', body);
+    if (navigator.share) {
+      navigator.share({ title, text: body }).catch(()=>{});
+      return;
+    }
+    const twIntent = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(body);
+    const win = window.open(twIntent, '_blank', 'noopener');
+    if (!win) {
+      try { navigator.clipboard?.writeText(body); alert('공유 문구를 복사했어요:\n\n' + body); }
+      catch { prompt('아래 내용을 복사해 주세요:', body); }
     }
   }
-}
-
 
   // ========= INPUT =========
   const keys=new Set(); addEventListener('keydown',e=>keys.add(e.key)); addEventListener('keyup',e=>keys.delete(e.key));
@@ -310,8 +358,14 @@
   addEventListener('mouseup',()=>{touchStartX=null;canvas.removeEventListener('mousemove',mouseMoveHandler);});
   addEventListener('touchend',()=>{touchStartX=null;},{passive:true});
 
-  ui.startBtn.addEventListener('click',startGame);
+  // 버튼 바인딩
+  ui.startBtn.addEventListener('click', ()=>{
+    startGame();
+    // 첫 사용자 제스처에서 BGM 시작(iOS 대응)
+    playBGM(true);
+  });
   ui.shareBtn.addEventListener('click',share);
+  ui.audioBtn.addEventListener('click', ()=> setMuted(bgmEnabled));
 
   // ========= GAME LOOP =========
   function startGame(){
@@ -422,28 +476,20 @@
         state.bananas.splice(i,1);
 
         if(b.kind==='rotten'){
-          // 썩바: 점수 없음, 체력 -1
           state.lives = Math.max(0, state.lives - 1);
           document.getElementById('lives').textContent = state.lives;
           state.shake = CONFIG.SHAKE_FRAMES; state.monkeyFlash = CONFIG.MONKEY_FLASH;
           addFloater(b.x, b.y, 'Oops.', 30);
 
         } else if(b.kind==='time'){
-          // 시간 바나나: 시간만 +3s
           state.timeLeft = Math.min(state.timeLeft + CONFIG.TIMEBANANA_ADD_S, CONFIG.GAME_SECONDS + 10);
           document.getElementById('time').textContent = state.timeLeft;
           addFloater(b.x, b.y, '⏱+'+CONFIG.TIMEBANANA_ADD_S+'s', 30);
 
         } else if (b.kind==='gold'){
-          // 골든: +5점
           state.score += 5;
           document.getElementById('score').textContent = state.score;
           addFloater(b.x,b.y,'Yum!', 30);
-
-        } else {
-          // 일반 바나나: 점수/효과 없음
-          // (필요 시 안내 버블을 띄우고 싶다면 아래처럼)
-          // addFloater(b.x,b.y,'—', 20);
         }
 
         if(state.score%6===0 && state.score>0) state.spawnEvery=Math.max(14,state.spawnEvery-1);
@@ -500,6 +546,9 @@
     }
     document.getElementById('shareBtn').classList.remove('hidden');
     document.getElementById('buyBtn').classList.remove('hidden');
+
+    // 게임오버 때 BGM을 멈추고 싶으면 아래 한 줄 주석 해제
+    // pauseBGM();
   }
 
   // ========= DRAW HELPERS =========
@@ -579,6 +628,9 @@
       slot.classList.add('has-img');
       slot.innerHTML = `<img class="logo" src="${asset('logo.png')}" alt="24/7 WITH DDEOSUNGEE">`;
     }
+
+    // BGM 버튼 초기 키캡
+    refreshAudioButton();
   }
   if(document.readyState!=='loading'){ boot(); } else { addEventListener('DOMContentLoaded', boot); }
   </script>
