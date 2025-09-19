@@ -73,6 +73,19 @@
     }
     .logo-fixed img.logo{height:var(--logo-height); width:auto; display:block}
 
+    /* ▼ 로고 PNG가 실제로 들어갔을 때의 스타일 */
+    .logo-fixed.has-img{
+      border:0;
+      background:transparent;
+      padding:0;
+      min-width:auto;
+    }
+    .logo-fixed.has-img img.logo{
+      display:block;
+      height:var(--logo-height);
+      width:auto;
+    }
+
     #stage{
       position:relative;
       min-height:0;
@@ -125,10 +138,8 @@
   </style>
 </head>
 <body>
+  <!-- 처음엔 슬롯(텍스트 상자)로 시작, PNG가 로드되면 JS가 이미지로 교체 -->
   <div class="logo-fixed" id="logoSlot">LOGO PNG</div>
-  <!-- PNG 사용 시:
-  <div class="logo-fixed"><img class="logo" src="logo.png" alt="24/7 WITH DDEOSUNGEE"></div>
-  -->
 
   <div class="wrap">
     <div id="stage" aria-label="WITH Monkey Game Stage">
@@ -248,7 +259,7 @@
   const state={
     running:false, frame:0, score:0, timeLeft:CONFIG.GAME_SECONDS,
     lives:3, shake:0, monkeyFlash:0,
-    // ▼ 변경: 원숭이 픽셀 크기 56×56
+    // ▼ 원숭이 픽셀 크기 56×56
     monkey:{x:180,y:560,w:56,h:56},
     bananas:[],
     assets:{monkey:null,gold:null,rotten:null,time:null,logo:null,bg:null},
@@ -474,9 +485,9 @@
       ctx.drawImage(state.assets.bg, 0, 0, canvas.width, canvas.height);
     } else {
       const g=ctx.createLinearGradient(0,0,0,canvas.height);
-      g.addColorStop(0,'#fff7d1'); 
-      g.addColorStop(1,'#fff1b0'); 
-      ctx.fillStyle=g; 
+      g.addColorStop(0,'#fff7d1');
+      g.addColorStop(1,'#fff1b0');
+      ctx.fillStyle=g;
       ctx.fillRect(0,0,canvas.width,canvas.height);
     }
   }
@@ -487,7 +498,17 @@
     ctx.fillText(text,0,6); ctx.restore()
   }
   function roundedRect(x,y,w,h,r,fill){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); if(fill) ctx.fill(); else ctx.stroke() }
-  function drawMonkey(cx,cy,w,h){ if(state.assets.monkey){ ctx.drawImage(state.assets.monkey,cx-w/2,cy-h/2,w,h) } else { ctx.save(); ctx.translate(cx,cy); ctx.fillStyle='#6b4f2a'; roundedRect(-w/2,-h/2,w,h,20,true); ctx.fillStyle='#f7d9b1'; roundedRect(-w/2+12,-h/2+14,w-24,h-28,16,true); ctx.fillStyle='#1b1b1b'; ctx.beginPath(); ctx.arc(-14,-8,6,0,Math.PI*2); ctx.arc(14,-8,6,0,Math.PI*2); ctx.fill(); ctx.restore() } }
+  function drawMonkey(cx,cy,w,h){
+    if(state.assets.monkey){
+      ctx.drawImage(state.assets.monkey,cx-w/2,cy-h/2,w,h)
+    } else {
+      ctx.save(); ctx.translate(cx,cy);
+      ctx.fillStyle='#6b4f2a'; roundedRect(-w/2,-h/2,w,h,20,true);
+      ctx.fillStyle='#f7d9b1'; roundedRect(-w/2+12,-h/2+14,w-24,h-28,16,true);
+      ctx.fillStyle='#1b1b1b'; ctx.beginPath(); ctx.arc(-14,-8,6,0,Math.PI*2); ctx.arc(14,-8,6,0,Math.PI*2); ctx.fill();
+      ctx.restore()
+    }
+  }
   function drawBanana(b){
     if(b.kind==='gold'   && state.assets.gold)   { ctx.drawImage(state.assets.gold,   b.x-b.w/2,b.y-b.h/2,b.w,b.h); return; }
     if(b.kind==='rotten' && state.assets.rotten) { ctx.drawImage(state.assets.rotten, b.x-b.w/2,b.y-b.h/2,b.w,b.h); return; }
@@ -525,6 +546,14 @@
     fitCanvas();
     draw();
     document.getElementById('best').textContent=localStorage.getItem('bestScore')||0;
+
+    /* ▼ 로고가 로드되면 슬롯을 이미지로 교체 */
+    const slot = document.getElementById('logoSlot');
+    if (logo) {
+      slot.classList.add('has-img');
+      // 캐시 문제 있으면 ?v=숫자 붙여도 OK
+      slot.innerHTML = `<img class="logo" src="${asset('logo.png')}" alt="24/7 WITH DDEOSUNGEE">`;
+    }
   }
   if(document.readyState!=='loading'){ boot(); } else { addEventListener('DOMContentLoaded', boot); }
   </script>
