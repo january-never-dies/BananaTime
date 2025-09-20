@@ -139,7 +139,13 @@
       position:absolute; inset:0; display:grid; place-items:center; text-align:center;
       background:rgba(0,0,0,.35); color:#fff; padding:20px; z-index:20; font-family: var(--font);
     }
-    .start-box{ background:rgba(0,0,0,.35); border-radius:12px; padding:16px 18px; max-width:min(90%,520px) }
+    .start-box{
+      background:rgba(0,0,0,.35); border-radius:12px; padding:16px 18px; max-width:min(90%,520px);
+      /* ▼ 추가: 패널 내부만 커지고, 넘치면 내부 스크롤 */
+      max-height: calc(100% - 24px);
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+    }
     .start-title{font:900 22px var(--font); margin-bottom:8px}
     .start-sub{font:800 18px var(--font); margin-bottom:8px}
     .start-help{font:600 14px var(--font); opacity:.95; line-height:1.5}
@@ -164,13 +170,13 @@
       </div>
 
       <div class="start-overlay" id="startOverlay" role="dialog" aria-modal="true">
-  <div class="start-box">
-    <div class="start-title">Banana Time!</div>
-    <div class="start-sub">드래그하여 이동 · 시간이 다 되거나 하트 3개를 다 잃으면 게임 오버</div>
-    <div class="start-help">골든 바나나(+5) · 썩은 바나나(❤️ -1) · 시간 바나나(⏱ +3s)</div>
-  </div>
-</div>
-
+        <div class="start-box">
+          <div class="start-title">Banana Time!</div>
+          <div class="start-sub">드래그하여 이동 · 시간이 다 되거나 하트 3개를 다 잃으면 게임 오버</div>
+          <div class="start-help">골든 바나나(+5) · 썩은 바나나(❤️ -1) · 시간 바나나(⏱ +3s)</div>
+        </div>
+      </div>
+    </div>
 
     <div class="group">
       <button class="btn" id="startBtn">떠숭이 밥주기</button>
@@ -221,11 +227,11 @@
     TITLE_TEXT: "Banana Time",
 
     // ===== [1]~[4] 하이스코어 보정 노브 =====
-    HIGH_SCORE_TUNE_START: 400, // 몇 점부터 보정 시작?
-    ROTTEN_MULT_AFTER: 0.6,     // 400점 이후 썩바 확률 60%로 축소
-    PAIR_MULT_AFTER: 0.7,       // 400점 이후 쌍 스폰 확률 70%로 축소
-    MAX_CONSEC_ROTTEN: 2,       // 단일 스폰 연속 썩바 상한(이상 나오지 않게)
-    TIMEBANANA_PERIOD_MULT_AFTER: 0.85 // 400점 이후 시간바나나 주기 15% 단축(더 자주)
+    HIGH_SCORE_TUNE_START: 400,
+    ROTTEN_MULT_AFTER: 0.6,
+    PAIR_MULT_AFTER: 0.7,
+    MAX_CONSEC_ROTTEN: 2,
+    TIMEBANANA_PERIOD_MULT_AFTER: 0.85
   };
 
   // ========= UTIL =========
@@ -327,7 +333,6 @@
     timeBananaFrames: 0,
     bubble:{text:'',frames:0},
     floaters:[],
-    // [4] 연속 썩바 상한용 카운터
     consecRotten: 0
   };
 
@@ -370,12 +375,11 @@
   // 버튼
   ui.startBtn.addEventListener('click', ()=>{
     startGame();
-    playBGM(true); // 첫 제스처에서 확실히 시작
+    playBGM(true);
   });
   ui.shareBtn.addEventListener('click',share);
   ui.audioBtn.addEventListener('click', ()=> setMuted(bgmEnabled));
 
-  // ===== BGM 확실한 시작 보강 =====
   document.addEventListener('pointerdown', () => {
     playBGM(true);
   }, { once: true });
@@ -395,8 +399,8 @@
     let pair = CONFIG.PAIR_CHANCE;
 
     if (score >= CONFIG.HIGH_SCORE_TUNE_START) {
-      rotten *= CONFIG.ROTTEN_MULT_AFTER; // 썩바 확률 축소
-      pair   *= CONFIG.PAIR_MULT_AFTER;   // 쌍 스폰 확률 축소
+      rotten *= CONFIG.ROTTEN_MULT_AFTER;
+      pair   *= CONFIG.PAIR_MULT_AFTER;
     }
     return { gold, rotten, pair };
   }
@@ -407,7 +411,7 @@
     state.running=true; state.frame=0; state.score=0; state.timeLeft=CONFIG.GAME_SECONDS; state.lives=3; state.shake=0; state.monkeyFlash=0; state.bananas=[];
     state.spawnEvery = CONFIG.BASE_SPAWN;
     state.timeAcc = 0;
-    state.consecRotten = 0; // [4] 리셋
+    state.consecRotten = 0;
 
     ui.score.textContent='0'; ui.time.textContent=CONFIG.GAME_SECONDS; ui.lives.textContent='3';
     ui.startBtn.textContent='다시 시작'; ui.shareBtn.classList.add('hidden'); ui.buyBtn.classList.add('hidden');
@@ -500,6 +504,13 @@
     const speed=lerp(CONFIG.FALL_MIN+0.5,CONFIG.FALL_MAX+state.score*0.02,Math.random());
     const vx=(Math.random()-0.5)*0.8;
     const sinAmp=lerp(CONFIG.DRIFT_SIN_MIN,CONFIG.DRIFT_SIN_MAX,Math.random());
+    const sinFreq=lerp(CONFIG.DRIFT_FREQ_MIN,CONFIG.DRIFT_MAX,Math.random());
+  }
+  // NOTE: 위 줄 오타 방지용 재정의
+  function spawnTimeBanana(){
+    const speed=lerp(CONFIG.FALL_MIN+0.5,CONFIG.FALL_MAX+state.score*0.02,Math.random());
+    const vx=(Math.random()-0.5)*0.8;
+    const sinAmp=lerp(CONFIG.DRIFT_SIN_MIN,CONFIG.DRIFT_SIN_MAX,Math.random());
     const sinFreq=lerp(CONFIG.DRIFT_FREQ_MIN,CONFIG.DRIFT_FREQ_MAX,Math.random());
     state.bananas.push({kind:'time',x:rand(24,canvas.width-24),y:-30,vx,vy:speed,w:46,h:46,phase:Math.random()*Math.PI*2,sinAmp,sinFreq,ax:0});
   }
@@ -510,7 +521,6 @@
     if(keys.has('ArrowRight')||keys.has('d')) state.monkey.x+=CONFIG.MONKEY_SPEED;
     state.monkey.x=clamp(state.monkey.x, state.monkey.w/2, canvas.width - state.monkey.w/2);
 
-    // [2][4] 가중치 + 연속 썩바 케어
     if (state.frame % state.spawnEvery === 0) {
       const chances = currentChances(state.score);
       if (Math.random() < chances.pair) {
@@ -557,11 +567,9 @@
       }
     }
 
-    /* ▼▼ 흔들림/플래시/버블 감쇠: 반드시 update()의 맨 끝에 유지 ▼▼ */
     if (state.shake > 0) state.shake--;
     if (state.monkeyFlash > 0) state.monkeyFlash--;
     if (state.bubble.frames > 0) state.bubble.frames--;
-    /* ▲▲ 감쇠 끝 ▲▲ */
   }
 
   // ========= DRAW =========
@@ -607,7 +615,7 @@
     }
     document.getElementById('shareBtn').classList.remove('hidden');
     document.getElementById('buyBtn').classList.remove('hidden');
-     pauseBGM(); 
+    pauseBGM();
   }
 
   // ========= DRAW HELPERS =========
@@ -684,3 +692,4 @@
   </script>
 </body>
 </html>
+
